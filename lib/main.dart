@@ -1,13 +1,20 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'widgets/dashboard.dart';
-import 'widgets/history.dart';
-import 'widgets/goals.dart';
-import 'widgets/reports.dart';
+import 'package:provider/provider.dart';
+import 'providers/user_provider.dart';
+import 'widgets/home_page.dart';
+import 'widgets/login_page.dart';
 
 void main() {
-  runApp(const App());
+  runApp(
+    ChangeNotifierProvider(
+      create:
+          (context) =>
+              UserProvider()
+                ..init()
+                ..updateUser(),
+      child: const App(),
+    ),
+  );
 }
 
 class App extends StatelessWidget {
@@ -21,97 +28,19 @@ class App extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
       ),
       scrollBehavior: NoThumbScrollBehavior().copyWith(scrollbars: false),
-      home: const HomePage(),
-    );
-  }
-}
-
-class HomePage extends StatefulWidget {
-  const HomePage({super.key});
-
-  @override
-  State<HomePage> createState() => _HomePageState();
-}
-
-class _HomePageState extends State<HomePage> {
-  int _currentIndex = 0;
-  final List<Widget> _tabs = [
-    DashboardTab(key: PageStorageKey('dashboard_tab')),
-    HistoryTab(key: PageStorageKey('history_tab')),
-    GoalsTab(key: PageStorageKey('goals_tab')),
-    ReportsTab(key: PageStorageKey('reports_tab')),
-  ];
-
-  void _setCurrentIndex(int index) {
-    setState(() {
-      _currentIndex = index;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
-        child: IndexedStack(index: _currentIndex, children: _tabs),
-      ),
-      appBar: AppBar(
-        systemOverlayStyle: SystemUiOverlayStyle(
-          statusBarColor: Colors.transparent,
-          statusBarIconBrightness: Brightness.dark,
-          statusBarBrightness: Brightness.light,
-        ),
-        elevation: 0.0,
-        toolbarHeight: 0.0,
-      ),
-      bottomNavigationBar: NavigationBar(
-        currentIndex: _currentIndex,
-        onTap: _setCurrentIndex,
+      home: Consumer<UserProvider>(
+        builder: (context, userProvider, child) {
+          if (userProvider.isLoggedIn == null) {
+            return const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            );
+          } else if (userProvider.isLoggedIn!) {
+            return const HomePage();
+          } else {
+            return const LoginPage();
+          }
+        },
       ),
     );
   }
-}
-
-class NavigationBar extends StatelessWidget {
-  const NavigationBar({
-    super.key,
-    required this.currentIndex,
-    required this.onTap,
-  });
-  final ValueChanged<int> onTap;
-
-  final int currentIndex;
-
-  @override
-  Widget build(BuildContext context) {
-    return BottomNavigationBar(
-      currentIndex: currentIndex, 
-      onTap: (index) => onTap(index),
-      selectedItemColor: Theme.of(context).colorScheme.primary,
-      unselectedItemColor: Colors.grey,
-      type: BottomNavigationBarType.fixed,
-      selectedFontSize: 14,
-      unselectedFontSize: 14,
-      showSelectedLabels: false,
-      showUnselectedLabels: false,
-      items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Обзор'),
-        BottomNavigationBarItem(icon: Icon(Icons.history), label: 'История'),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.monetization_on_outlined),
-          label: 'Цели и накопления',
-        ),
-        BottomNavigationBarItem(icon: Icon(Icons.list_alt), label: 'Отчёты'),
-      ],
-    );
-  }
-}
-
-class NoThumbScrollBehavior extends ScrollBehavior {
-  @override
-  Set<PointerDeviceKind> get dragDevices => {
-    PointerDeviceKind.touch,
-    PointerDeviceKind.mouse,
-    PointerDeviceKind.stylus,
-    PointerDeviceKind.trackpad,
-  };
 }

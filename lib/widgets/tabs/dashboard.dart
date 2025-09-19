@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../providers/user_provider.dart';
 
 class DashboardTab extends StatefulWidget {
   const DashboardTab({super.key});
@@ -19,9 +21,11 @@ class _DashboardTabState extends State<DashboardTab> {
 
           children: [
             SizedBox(height: 32),
-            Text(
-              'Добрый день, Максим!',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            Consumer<UserProvider>(
+              builder: (context, userProvider, child) => Text(
+                'Добрый день, ${userProvider.currentUser!.name}!',
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              ),
             ),
             SizedBox(height: 16),
             IntrinsicHeight(
