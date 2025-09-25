@@ -24,7 +24,6 @@ class _LoginPageState extends State<LoginPage> {
     if (!_formKey.currentState!.validate()) {
       return;
     }
-
     setState(() {
       _errorMessage = null;
     });
@@ -63,6 +62,10 @@ class _LoginPageState extends State<LoginPage> {
     } on UserEmailConflictException catch (e) {
       setState(() {
         _errorMessage = e.message;
+      });
+    } on Exception {
+      setState(() {
+        _errorMessage = 'Непредвиденная ошибка';
       });
     }
   }
@@ -299,7 +302,15 @@ class _LoginPageState extends State<LoginPage> {
 
   Widget _buildProceedButton(BuildContext context) {
     return ElevatedButton(
-      onPressed: () => _registrationMode ? _register() : _login(),
+      onPressed: () async {
+        _showLoadingDialog(context);
+        if (_registrationMode) {
+          await _register();
+        } else {
+          await _login();
+        }
+        Navigator.of(context).pop(); // Close the loading dialog
+      },
       style: ElevatedButton.styleFrom(
         backgroundColor: Theme.of(context).colorScheme.primary,
         foregroundColor: Theme.of(context).colorScheme.onPrimary,
@@ -330,6 +341,22 @@ class _LoginPageState extends State<LoginPage> {
             ? 'Уже есть аккаунт? Войти'
             : 'Нет аккаунта? Зарегистрироваться',
       ),
+    );
+  }
+
+  void _showLoadingDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(
+              Theme.of(context).colorScheme.primary,
+            ),
+          ),
+        );
+      },
     );
   }
 

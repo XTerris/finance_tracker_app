@@ -24,15 +24,10 @@ class UserProvider extends ChangeNotifier {
   }
 
   Future<void> login(String username, String password) async {
-    try {
-      await serviceLocator.apiService.login(username, password);
-      await _updateUser();
-      _isLoggedIn = true;
-      notifyListeners();
-    } on Exception catch (e) {
-      print('Failed to login: $e');
-      rethrow;
-    }
+    await serviceLocator.apiService.login(username, password);
+    await _updateUser();
+    _isLoggedIn = true;
+    notifyListeners();
   }
 
   Future<void> createUser(
@@ -40,12 +35,7 @@ class UserProvider extends ChangeNotifier {
     String email,
     String password,
   ) async {
-    try {
-      await serviceLocator.apiService.createUser(username, email, password);
-    } on Exception catch (e) {
-      print('Failed to create user: $e');
-      rethrow;
-    }
+    await serviceLocator.apiService.createUser(username, email, password);
     await login(email, password);
   }
 
