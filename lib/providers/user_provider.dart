@@ -42,6 +42,7 @@ class UserProvider extends ChangeNotifier {
   Future<void> logout() async {
     await serviceLocator.apiService.clearToken();
     await serviceLocator.hiveService.clearCurrentUser();
+    await serviceLocator.hiveService.clearAllTransactions();
     _isLoggedIn = false;
     notifyListeners();
   }

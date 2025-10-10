@@ -54,8 +54,23 @@ class TransactionProvider extends ChangeNotifier {
     }
   }
 
-  void addTransaction(Transaction transaction) async {
+  Future<void> addTransaction({
+    required String title,
+    required double amount,
+    required int categoryId,
+    required int accountId,
+    DateTime? doneAt,
+  }) async {
+    final transaction = await serviceLocator.apiService.createTransaction(
+      title: title,
+      amount: amount,
+      categoryId: categoryId,
+      accountId: accountId,
+      doneAt: doneAt,
+    );
+
     _transactions.add(transaction);
+    await serviceLocator.hiveService.saveTransactions([transaction]);
     notifyListeners();
   }
 

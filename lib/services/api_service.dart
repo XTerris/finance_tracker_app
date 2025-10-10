@@ -1,16 +1,18 @@
 import 'dart:convert';
+import 'package:finance_tracker_app/models/token.dart';
+import 'package:finance_tracker_app/models/user.dart';
+import 'package:finance_tracker_app/models/category.dart';
 import 'package:finance_tracker_app/models/transaction.dart';
+import 'package:finance_tracker_app/models/account.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'api_exceptions.dart';
-import '../models/token.dart';
-import '../models/user.dart';
 
 enum HttpMethod { get, post, put, delete, patch }
 
 class ApiService {
   static const String _defaultServerIp =
-      '192.168.1.142'; // 'localhost'; // '172.16.0.31';
+      'localhost'; // '192.168.1.142'; // '172.16.0.31';
   static const String _defaultServerPort = '8001';
   static const Duration _timeout = Duration(seconds: 5);
 
@@ -257,8 +259,69 @@ class ApiService {
     return (data as List).map((e) => e as int).toList();
   }
 
+  Future<Transaction> createTransaction({
+    required String title,
+    required double amount,
+    required int categoryId,
+    required int accountId,
+    DateTime? doneAt,
+  }) async {
+    final data = await _makeRequest(
+      HttpMethod.post,
+      '/transactions/',
+      body: {
+        'title': title,
+        'amount': amount,
+        'category_id': categoryId,
+        'account_id': accountId,
+        if (doneAt != null) 'done_at': doneAt.toIso8601String(),
+      },
+    );
+    return Transaction.fromJson(data);
+  }
+
   Future<void> deleteTransaction(int id) async {
     await _makeRequest(HttpMethod.delete, '/transactions/$id');
+  }
+
+  Future<List<Category>> getAllCategories() async {
+    final data = await _makeRequest(HttpMethod.get, '/categories/');
+    return (data as List)
+        .map((e) => Category.fromJson(e))
+        .toList(growable: false);
+  }
+
+  Future<Category> createCategory(String name) async {
+    final data = await _makeRequest(
+      HttpMethod.post,
+      '/categories/',
+      body: {'name': name},
+    );
+    return Category.fromJson(data);
+  }
+
+  Future<void> deleteCategory(int id) async {
+    await _makeRequest(HttpMethod.delete, '/categories/$id');
+  }
+
+  Future<List<Account>> getAllAccounts() async {
+    final data = await _makeRequest(HttpMethod.get, '/accounts/');
+    return (data as List)
+        .map((e) => Account.fromJson(e))
+        .toList(growable: false);
+  }
+
+  Future<Account> createAccount(String name, double initialBalance) async {
+    final data = await _makeRequest(
+      HttpMethod.post,
+      '/accounts/',
+      body: {'name': name, 'initial_balance': initialBalance},
+    );
+    return Account.fromJson(data);
+  }
+
+  Future<void> deleteAccount(int id) async {
+    await _makeRequest(HttpMethod.delete, '/accounts/$id');
   }
 
   void dispose() {
