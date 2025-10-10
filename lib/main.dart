@@ -1,8 +1,10 @@
-import 'package:finance_tracker_app/providers/transaction_provider.dart';
 import 'package:finance_tracker_app/service_locator.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/user_provider.dart';
+import 'providers/category_provider.dart';
+import 'providers/transaction_provider.dart';
+import 'providers/account_provider.dart';
 import 'widgets/home_page.dart';
 import 'widgets/login_page.dart';
 
@@ -19,6 +21,12 @@ void main() async {
         ),
         ChangeNotifierProvider<TransactionProvider>(
           create: (context) => TransactionProvider()..init(),
+        ),
+        ChangeNotifierProvider<CategoryProvider>(
+          create: (context) => CategoryProvider()..init(),
+        ),
+        ChangeNotifierProvider<AccountProvider>(
+          create: (context) => AccountProvider()..init(),
         ),
       ],
       child: const App(),

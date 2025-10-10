@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/transaction_provider.dart';
+import '../../providers/category_provider.dart';
+import '../../providers/account_provider.dart';
 import 'tab_widgets/transaction_plate.dart';
+import 'tab_widgets/add_transaction_bottom_sheet.dart';
 
 class HistoryTab extends StatefulWidget {
   const HistoryTab({super.key});
@@ -19,6 +22,8 @@ class _HistoryTabState extends State<HistoryTab> {
       body: RefreshIndicator(
         onRefresh: () async {
           await context.read<TransactionProvider>().update();
+          await context.read<CategoryProvider>().update();
+          await context.read<AccountProvider>().update();
         },
         child: ListView(
           physics: AlwaysScrollableScrollPhysics(),
@@ -72,8 +77,10 @@ class _HistoryTabState extends State<HistoryTab> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Text("Not implemented yet"),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => const AddTransactionBottomSheet(),
     );
   }
 }
