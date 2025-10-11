@@ -23,7 +23,7 @@ class CategoryProvider extends ChangeNotifier {
       await serviceLocator.hiveService.saveCategories(categories);
       notifyListeners();
     } catch (e) {
-      print('Error fetching categories: $e');
+      debugPrint('Error fetching categories: $e');
     }
   }
 

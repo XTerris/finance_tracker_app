@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'tabs/dashboard.dart';
 import 'tabs/history.dart';
-import 'tabs/goals.dart';
+import 'tabs/accounts.dart';
 import 'tabs/reports.dart';
 
 class HomePage extends StatefulWidget {
@@ -64,7 +64,7 @@ class NavigationBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BottomNavigationBar(
-      currentIndex: currentIndex, 
+      currentIndex: currentIndex,
       onTap: (index) => onTap(index),
       selectedItemColor: Theme.of(context).colorScheme.primary,
       unselectedItemColor: Colors.grey,

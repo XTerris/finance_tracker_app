@@ -45,7 +45,7 @@ class _LoginPageState extends State<LoginPage> {
       setState(() {
         _errorMessage = 'Непредвиденная ошибка';
       });
-      print('Login error: $e');
+      debugPrint('Login error: $e');
     }
   }
 

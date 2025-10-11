@@ -64,6 +64,8 @@ class _AddTransactionBottomSheetState extends State<AddTransactionBottomSheet> {
 
   Future<void> _createNewCategory(BuildContext context) async {
     final categoryNameController = TextEditingController();
+    final categoryProvider = context.read<CategoryProvider>();
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
 
     final result = await showDialog<String>(
       context: context,
@@ -97,11 +99,12 @@ class _AddTransactionBottomSheetState extends State<AddTransactionBottomSheet> {
     );
 
     if (result != null && result.isNotEmpty) {
-      final categoryProvider = context.read<CategoryProvider>();
       categoryProvider.addCategory(result);
 
       // Wait a bit for the provider to update
       await Future.delayed(const Duration(milliseconds: 300));
+
+      if (!mounted) return;
 
       // Set the newly created category as selected
       if (categoryProvider.categories.isNotEmpty) {
@@ -111,11 +114,9 @@ class _AddTransactionBottomSheetState extends State<AddTransactionBottomSheet> {
         });
       }
 
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Категория "$result" создана')));
-      }
+      scaffoldMessenger.showSnackBar(
+        SnackBar(content: Text('Категория "$result" создана')),
+      );
     }
 
     categoryNameController.dispose();
@@ -144,6 +145,9 @@ class _AddTransactionBottomSheetState extends State<AddTransactionBottomSheet> {
       _isLoading = true;
     });
 
+    final navigator = Navigator.of(context);
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+
     try {
       final transactionProvider = context.read<TransactionProvider>();
 
@@ -156,16 +160,16 @@ class _AddTransactionBottomSheetState extends State<AddTransactionBottomSheet> {
       );
 
       if (mounted) {
-        Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
+        navigator.pop();
+        scaffoldMessenger.showSnackBar(
           const SnackBar(content: Text('Транзакция успешно добавлена')),
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Ошибка: ${e.toString()}')));
+        scaffoldMessenger.showSnackBar(
+          SnackBar(content: Text('Ошибка: ${e.toString()}')),
+        );
       }
     } finally {
       if (mounted) {

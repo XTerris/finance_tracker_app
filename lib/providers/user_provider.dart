@@ -25,7 +25,7 @@ class UserProvider extends ChangeNotifier {
         await serviceLocator.hiveService.saveCurrentUser(_currentUser);
       } catch (e) {
         // If we can't get the current user, the session is invalid
-        print('Session validation failed: $e');
+        debugPrint('Session validation failed: $e');
         _isLoggedIn = false;
         await serviceLocator.apiService.clearToken();
         await serviceLocator.hiveService.clearCurrentUser();

@@ -21,9 +21,13 @@ class _HistoryTabState extends State<HistoryTab> {
     return Scaffold(
       body: RefreshIndicator(
         onRefresh: () async {
-          await context.read<TransactionProvider>().update();
-          await context.read<CategoryProvider>().update();
-          await context.read<AccountProvider>().update();
+          final transactionProvider = context.read<TransactionProvider>();
+          final categoryProvider = context.read<CategoryProvider>();
+          final accountProvider = context.read<AccountProvider>();
+          
+          await transactionProvider.update();
+          await categoryProvider.update();
+          await accountProvider.update();
         },
         child: ListView(
           physics: AlwaysScrollableScrollPhysics(),

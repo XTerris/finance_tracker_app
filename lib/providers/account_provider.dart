@@ -23,7 +23,7 @@ class AccountProvider extends ChangeNotifier {
       await serviceLocator.hiveService.saveAccounts(accounts);
       notifyListeners();
     } catch (e) {
-      print('Error fetching accounts: $e');
+      debugPrint('Error fetching accounts: $e');
     }
   }
 

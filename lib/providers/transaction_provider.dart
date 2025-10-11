@@ -50,7 +50,7 @@ class TransactionProvider extends ChangeNotifier {
       }
       notifyListeners();
     } catch (e) {
-      print('Error fetching transactions: $e');
+      debugPrint('Error fetching transactions: $e');
     }
   }
 
