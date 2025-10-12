@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../models/transaction.dart';
+import '../../../providers/account_provider.dart';
 
 class TransactionPlate extends StatelessWidget {
   final Transaction transaction;
@@ -27,11 +28,32 @@ class TransactionPlate extends StatelessWidget {
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
           Text('Сумма: ${transaction.amount}', style: TextStyle(fontSize: 14)),
+          SizedBox(height: 8),
+          Text('Счет списания: ${transaction.fromAccountId}'),
+          Text('Счет зачисления: ${transaction.toAccountId}'),
           TextButton(
             onPressed: () async {
-              context.read<TransactionProvider>().removeTransaction(
-                transaction.id,
-              );
+              try {
+                await context.read<TransactionProvider>().removeTransaction(
+                  transaction.id,
+                );
+                await context.read<AccountProvider>().update();
+                
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Транзакция удалена')),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(e.toString().replaceAll('Exception: ', '')),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
             },
             child: Text("Удалить"),
           ),

@@ -39,11 +39,11 @@ class _LoginPageState extends State<LoginPage> {
       });
     } on NetworkException {
       setState(() {
-        _errorMessage = 'Ошибка сети';
+        _errorMessage = 'Нет подключения к интернету. Проверьте соединение и попробуйте снова.';
       });
     } on Exception catch (e) {
       setState(() {
-        _errorMessage = 'Непредвиденная ошибка';
+        _errorMessage = 'Не удалось войти. Проверьте подключение к интернету.';
       });
       debugPrint('Login error: $e');
     }
@@ -64,9 +64,13 @@ class _LoginPageState extends State<LoginPage> {
       setState(() {
         _errorMessage = e.message;
       });
+    } on NetworkException {
+      setState(() {
+        _errorMessage = 'Нет подключения к интернету. Проверьте соединение и попробуйте снова.';
+      });
     } on Exception {
       setState(() {
-        _errorMessage = 'Непредвиденная ошибка';
+        _errorMessage = 'Не удалось зарегистрироваться. Проверьте подключение к интернету.';
       });
     }
   }

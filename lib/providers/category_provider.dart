@@ -12,22 +12,24 @@ class CategoryProvider extends ChangeNotifier {
     final categories = await serviceLocator.hiveService.getAllCategories();
     _categories = {for (var category in categories) category.id: category};
     notifyListeners();
-    update();
-  }
-
-  Future<void> update() async {
+    
+    // Try to update from server, but don't fail if offline
     try {
-      final categories = await serviceLocator.apiService.getAllCategories();
-      _categories = {for (var category in categories) category.id: category};
-      await serviceLocator.hiveService.clearAllCategories();
-      await serviceLocator.hiveService.saveCategories(categories);
-      notifyListeners();
+      await update();
     } catch (e) {
-      debugPrint('Error fetching categories: $e');
+      debugPrint('Could not update categories from server: $e');
     }
   }
 
-  void addCategory(String categoryName) async {
+  Future<void> update() async {
+    final categories = await serviceLocator.apiService.getAllCategories();
+    _categories = {for (var category in categories) category.id: category};
+    await serviceLocator.hiveService.clearAllCategories();
+    await serviceLocator.hiveService.saveCategories(categories);
+    notifyListeners();
+  }
+
+  Future<void> addCategory(String categoryName) async {
     final category = await serviceLocator.apiService.createCategory(
       categoryName,
     );
@@ -37,7 +39,7 @@ class CategoryProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void removeCategory(int id) async {
+  Future<void> removeCategory(int id) async {
     await serviceLocator.apiService.deleteCategory(id);
     _categories.remove(id);
     await serviceLocator.hiveService.deleteCategory(id);

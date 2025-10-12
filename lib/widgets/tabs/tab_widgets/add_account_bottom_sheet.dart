@@ -35,22 +35,26 @@ class _AddAccountBottomSheetState extends State<AddAccountBottomSheet> {
     try {
       final accountProvider = context.read<AccountProvider>();
 
-      accountProvider.addAccount(
+      await accountProvider.addAccount(
         _nameController.text.trim(),
         double.parse(_balanceController.text.trim()),
       );
 
       if (mounted) {
         Navigator.of(context).pop();
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Счёт успешно создан')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Счёт успешно создан')),
+        );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Ошибка: ${e.toString()}')));
+        Navigator.of(context).pop(); // Close bottom sheet first
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString().replaceAll('Exception: ', '')),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     } finally {
       if (mounted) {

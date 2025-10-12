@@ -43,7 +43,23 @@ class AccountPlate extends StatelessWidget {
     );
 
     if (confirmed == true && context.mounted) {
-      context.read<AccountProvider>().removeAccount(account.id);
+      try {
+        await context.read<AccountProvider>().removeAccount(account.id);
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Счёт удалён')),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(e.toString().replaceAll('Exception: ', '')),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
     }
   }
 

@@ -16,18 +16,29 @@ class HistoryTab extends StatefulWidget {
 class _HistoryTabState extends State<HistoryTab> {
   @override
   Widget build(BuildContext context) {
-    final transactions = context.watch<TransactionProvider>().transactions;
-
     return Scaffold(
       body: RefreshIndicator(
         onRefresh: () async {
           final transactionProvider = context.read<TransactionProvider>();
           final categoryProvider = context.read<CategoryProvider>();
           final accountProvider = context.read<AccountProvider>();
-          
-          await transactionProvider.update();
-          await categoryProvider.update();
-          await accountProvider.update();
+
+          try {
+            await transactionProvider.update();
+            await categoryProvider.update();
+            await accountProvider.update();
+          } catch (e) {
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text(
+                    'Не удалось обновить данные. Проверьте подключение к интернету.',
+                  ),
+                  backgroundColor: Colors.orange,
+                ),
+              );
+            }
+          }
         },
         child: ListView(
           physics: AlwaysScrollableScrollPhysics(),
@@ -46,7 +57,7 @@ class _HistoryTabState extends State<HistoryTab> {
                 ],
               ),
             ),
-            if (transactions.isEmpty)
+            if (context.watch<TransactionProvider>().transactions.isEmpty)
               Center(
                 child: SizedBox(
                   height: 200,
@@ -60,7 +71,7 @@ class _HistoryTabState extends State<HistoryTab> {
                 ),
               )
             else
-              ...transactions.map(
+              ...context.watch<TransactionProvider>().transactions.map(
                 (transaction) => Padding(
                   padding: EdgeInsets.symmetric(horizontal: 16.0),
                   child: TransactionPlate(transaction: transaction),

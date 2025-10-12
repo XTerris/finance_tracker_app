@@ -22,8 +22,8 @@ class TransactionAdapter extends TypeAdapter<Transaction> {
       amount: fields[2] as double,
       doneAt: fields[3] as DateTime,
       categoryId: fields[4] as int,
-      accountId: fields[5] as int,
-      isIncome: fields[6] as bool,
+      fromAccountId: fields[5] as int?,
+      toAccountId: fields[6] as int?,
     );
   }
 
@@ -42,9 +42,9 @@ class TransactionAdapter extends TypeAdapter<Transaction> {
       ..writeByte(4)
       ..write(obj.categoryId)
       ..writeByte(5)
-      ..write(obj.accountId)
+      ..write(obj.fromAccountId)
       ..writeByte(6)
-      ..write(obj.isIncome);
+      ..write(obj.toAccountId);
   }
 
   @override

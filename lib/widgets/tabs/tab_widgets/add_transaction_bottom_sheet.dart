@@ -5,6 +5,8 @@ import '../../../providers/transaction_provider.dart';
 import '../../../providers/category_provider.dart';
 import '../../../providers/account_provider.dart';
 
+enum TransactionType { expense, income, transfer }
+
 class AddTransactionBottomSheet extends StatefulWidget {
   const AddTransactionBottomSheet({super.key});
 
@@ -19,8 +21,9 @@ class _AddTransactionBottomSheetState extends State<AddTransactionBottomSheet> {
   final _amountController = TextEditingController();
 
   int? _selectedCategoryId;
-  int? _selectedAccountId;
-  bool _isIncome = false;
+  TransactionType _transactionType = TransactionType.expense;
+  int? _selectedFromAccountId;
+  int? _selectedToAccountId;
   DateTime _selectedDate = DateTime.now();
   bool _isLoading = false;
 
@@ -100,24 +103,32 @@ class _AddTransactionBottomSheetState extends State<AddTransactionBottomSheet> {
     );
 
     if (result != null && result.isNotEmpty) {
-      categoryProvider.addCategory(result);
+      try {
+        await categoryProvider.addCategory(result);
 
-      // Wait a bit for the provider to update
-      await Future.delayed(const Duration(milliseconds: 300));
+        if (!mounted) return;
 
-      if (!mounted) return;
+        // Set the newly created category as selected
+        if (categoryProvider.categories.isNotEmpty) {
+          final newCategory = categoryProvider.categories.last;
+          setState(() {
+            _selectedCategoryId = newCategory.id;
+          });
+        }
 
-      // Set the newly created category as selected
-      if (categoryProvider.categories.isNotEmpty) {
-        final newCategory = categoryProvider.categories.last;
-        setState(() {
-          _selectedCategoryId = newCategory.id;
-        });
+        scaffoldMessenger.showSnackBar(
+          SnackBar(content: Text('Категория "$result" создана')),
+        );
+      } catch (e) {
+        if (!mounted) return;
+        Navigator.of(context).pop(); // Close bottom sheet first
+        scaffoldMessenger.showSnackBar(
+          SnackBar(
+            content: Text(e.toString().replaceAll('Exception: ', '')),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
-
-      scaffoldMessenger.showSnackBar(
-        SnackBar(content: Text('Категория "$result" создана')),
-      );
     }
 
     categoryNameController.dispose();
@@ -129,17 +140,24 @@ class _AddTransactionBottomSheetState extends State<AddTransactionBottomSheet> {
     }
 
     if (_selectedCategoryId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Пожалуйста, выберите категорию')),
-      );
+      _showSnackBar('Пожалуйста, выберите категорию');
       return;
     }
 
-    if (_selectedAccountId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Пожалуйста, выберите счет')),
-      );
-      return;
+    // Validate accounts based on transaction type
+    if (_transactionType == TransactionType.expense ||
+        _transactionType == TransactionType.transfer) {
+      if (_selectedFromAccountId == null) {
+        _showSnackBar('Пожалуйста, выберите счет отправления');
+        return;
+      }
+    }
+    if (_transactionType == TransactionType.income ||
+        _transactionType == TransactionType.transfer) {
+      if (_selectedToAccountId == null) {
+        _showSnackBar('Пожалуйста, выберите счет назначения');
+        return;
+      }
     }
 
     setState(() {
@@ -147,7 +165,6 @@ class _AddTransactionBottomSheetState extends State<AddTransactionBottomSheet> {
     });
 
     final navigator = Navigator.of(context);
-    final scaffoldMessenger = ScaffoldMessenger.of(context);
 
     try {
       final transactionProvider = context.read<TransactionProvider>();
@@ -156,9 +173,9 @@ class _AddTransactionBottomSheetState extends State<AddTransactionBottomSheet> {
       await transactionProvider.addTransaction(
         title: _titleController.text.trim(),
         amount: double.parse(_amountController.text.trim()),
-        isIncome: _isIncome,
         categoryId: _selectedCategoryId!,
-        accountId: _selectedAccountId!,
+        fromAccountId: _selectedFromAccountId,
+        toAccountId: _selectedToAccountId,
         doneAt: _selectedDate,
       );
 
@@ -167,14 +184,18 @@ class _AddTransactionBottomSheetState extends State<AddTransactionBottomSheet> {
 
       if (mounted) {
         navigator.pop();
-        scaffoldMessenger.showSnackBar(
+        ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Транзакция успешно добавлена')),
         );
       }
     } catch (e) {
       if (mounted) {
-        scaffoldMessenger.showSnackBar(
-          SnackBar(content: Text('Ошибка: ${e.toString()}')),
+        navigator.pop(); // Close bottom sheet first
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString().replaceAll('Exception: ', '')),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     } finally {
@@ -183,6 +204,26 @@ class _AddTransactionBottomSheetState extends State<AddTransactionBottomSheet> {
           _isLoading = false;
         });
       }
+    }
+  }
+
+  void _showSnackBar(String message, {bool isError = false}) {
+    final scaffoldContext =
+        context.findAncestorStateOfType<ScaffoldState>()?.context;
+    if (scaffoldContext != null) {
+      ScaffoldMessenger.of(scaffoldContext).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: isError ? Colors.red : null,
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: isError ? Colors.red : null,
+        ),
+      );
     }
   }
 
@@ -264,46 +305,6 @@ class _AddTransactionBottomSheetState extends State<AddTransactionBottomSheet> {
               ),
               const SizedBox(height: 16),
 
-              // Transaction Type
-              DropdownButtonFormField<bool>(
-                value: _isIncome,
-                decoration: const InputDecoration(
-                  labelText: 'Тип транзакции',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.swap_vert),
-                ),
-                items: const [
-                  DropdownMenuItem<bool>(
-                    value: false,
-                    child: Row(
-                      children: [
-                        Icon(Icons.arrow_downward, color: Colors.red, size: 20),
-                        SizedBox(width: 8),
-                        Text('Расход'),
-                      ],
-                    ),
-                  ),
-                  DropdownMenuItem<bool>(
-                    value: true,
-                    child: Row(
-                      children: [
-                        Icon(Icons.arrow_upward, color: Colors.green, size: 20),
-                        SizedBox(width: 8),
-                        Text('Доход'),
-                      ],
-                    ),
-                  ),
-                ],
-                onChanged: (value) {
-                  if (value != null) {
-                    setState(() {
-                      _isIncome = value;
-                    });
-                  }
-                },
-              ),
-              const SizedBox(height: 16),
-
               // Category dropdown
               DropdownButtonFormField<int>(
                 value: _selectedCategoryId,
@@ -348,36 +349,139 @@ class _AddTransactionBottomSheetState extends State<AddTransactionBottomSheet> {
               ),
               const SizedBox(height: 16),
 
-              // Account dropdown
-              DropdownButtonFormField<int>(
-                value: _selectedAccountId,
+              // Transaction Type
+              DropdownButtonFormField<TransactionType>(
+                value: _transactionType,
                 decoration: const InputDecoration(
-                  labelText: 'Счет',
+                  labelText: 'Тип транзакции',
                   border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.account_balance_wallet),
+                  prefixIcon: Icon(Icons.swap_vert),
                 ),
-                items:
-                    accountProvider.accounts.map((account) {
-                      return DropdownMenuItem<int>(
-                        value: account.id,
-                        child: Text(
-                          '${account.name} (${account.balance.toStringAsFixed(2)})',
-                        ),
-                      );
-                    }).toList(),
+                items: const [
+                  DropdownMenuItem<TransactionType>(
+                    value: TransactionType.expense,
+                    child: Row(
+                      children: [
+                        Icon(Icons.arrow_downward, color: Colors.red, size: 20),
+                        SizedBox(width: 8),
+                        Text('Списание'),
+                      ],
+                    ),
+                  ),
+                  DropdownMenuItem<TransactionType>(
+                    value: TransactionType.income,
+                    child: Row(
+                      children: [
+                        Icon(Icons.arrow_upward, color: Colors.green, size: 20),
+                        SizedBox(width: 8),
+                        Text('Зачисление'),
+                      ],
+                    ),
+                  ),
+                  DropdownMenuItem<TransactionType>(
+                    value: TransactionType.transfer,
+                    child: Row(
+                      children: [
+                        Icon(Icons.swap_horiz, color: Colors.blue, size: 20),
+                        SizedBox(width: 8),
+                        Text('Перевод между счетами'),
+                      ],
+                    ),
+                  ),
+                ],
                 onChanged: (value) {
-                  setState(() {
-                    _selectedAccountId = value;
-                  });
-                },
-                validator: (value) {
-                  if (value == null) {
-                    return 'Пожалуйста, выберите счет';
+                  if (value != null) {
+                    setState(() {
+                      _transactionType = value;
+                      _selectedFromAccountId = null;
+                      _selectedToAccountId = null;
+                    });
                   }
-                  return null;
                 },
               ),
               const SizedBox(height: 16),
+
+              if (_transactionType != TransactionType.income) ...[
+                // From Account dropdown
+                DropdownButtonFormField<int>(
+                  value: _selectedFromAccountId,
+                  decoration: const InputDecoration(
+                    labelText: 'Счет списания',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.call_made),
+                  ),
+                  items:
+                      accountProvider.accounts
+                          .where(
+                            (account) => account.id != _selectedToAccountId,
+                          )
+                          .map((account) {
+                            return DropdownMenuItem<int>(
+                              value: account.id,
+                              child: Text(
+                                '${account.name} (${account.balance.toStringAsFixed(2)})',
+                              ),
+                            );
+                          })
+                          .toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedFromAccountId = value;
+                    });
+                  },
+                  validator: (value) {
+                    if (_transactionType == TransactionType.expense ||
+                        _transactionType == TransactionType.transfer) {
+                      if (value == null) {
+                        return 'Пожалуйста, выберите счет списания';
+                      }
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+              ],
+
+              if (_transactionType != TransactionType.expense) ...[
+                // To Account dropdown
+                DropdownButtonFormField<int>(
+                  value: _selectedToAccountId,
+                  decoration: const InputDecoration(
+                    labelText: 'Счет зачисления',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.call_made),
+                  ),
+                  items:
+                      accountProvider.accounts
+                          .where(
+                            (account) => account.id != _selectedFromAccountId,
+                          )
+                          .map((account) {
+                            return DropdownMenuItem<int>(
+                              value: account.id,
+                              child: Text(
+                                '${account.name} (${account.balance.toStringAsFixed(2)})',
+                              ),
+                            );
+                          })
+                          .toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedToAccountId = value;
+                    });
+                  },
+                  validator: (value) {
+                    if (_transactionType == TransactionType.income ||
+                        _transactionType == TransactionType.transfer) {
+                      if (value == null) {
+                        return 'Пожалуйста, выберите счет зачисления';
+                      }
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+              ],
 
               // Date and Time
               Row(

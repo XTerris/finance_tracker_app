@@ -351,10 +351,10 @@ class ApiService {
   Future<Transaction> createTransaction({
     required String title,
     required double amount,
-    required bool isIncome,
     required int categoryId,
-    required int accountId,
     DateTime? doneAt,
+    int? fromAccountId,
+    int? toAccountId,
   }) async {
     final data = await _makeRequest(
       HttpMethod.post,
@@ -362,10 +362,10 @@ class ApiService {
       body: {
         'title': title,
         'amount': amount,
-        'is_income': isIncome,
         'category_id': categoryId,
-        'account_id': accountId,
         if (doneAt != null) 'done_at': doneAt.toIso8601String(),
+        if (fromAccountId != null) 'from_account_id': fromAccountId,
+        if (toAccountId != null) 'to_account_id': toAccountId,
       },
     );
     return Transaction.fromJson(data);

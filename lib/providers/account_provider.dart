@@ -12,22 +12,24 @@ class AccountProvider extends ChangeNotifier {
     final accounts = await serviceLocator.hiveService.getAllAccounts();
     _accounts = {for (var account in accounts) account.id: account};
     notifyListeners();
-    update();
-  }
 
-  Future<void> update() async {
+    // Try to update from server, but don't fail if offline
     try {
-      final accounts = await serviceLocator.apiService.getAllAccounts();
-      _accounts = {for (var account in accounts) account.id: account};
-      await serviceLocator.hiveService.clearAllAccounts();
-      await serviceLocator.hiveService.saveAccounts(accounts);
-      notifyListeners();
+      await update();
     } catch (e) {
-      debugPrint('Error fetching accounts: $e');
+      debugPrint('Could not update accounts from server: $e');
     }
   }
 
-  void addAccount(String accountName, double initialBalance) async {
+  Future<void> update() async {
+    final accounts = await serviceLocator.apiService.getAllAccounts();
+    _accounts = {for (var account in accounts) account.id: account};
+    await serviceLocator.hiveService.clearAllAccounts();
+    await serviceLocator.hiveService.saveAccounts(accounts);
+    notifyListeners();
+  }
+
+  Future<void> addAccount(String accountName, double initialBalance) async {
     final account = await serviceLocator.apiService.createAccount(
       accountName,
       initialBalance,
@@ -38,7 +40,7 @@ class AccountProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void removeAccount(int id) async {
+  Future<void> removeAccount(int id) async {
     await serviceLocator.apiService.deleteAccount(id);
     _accounts.remove(id);
     await serviceLocator.hiveService.deleteAccount(id);
