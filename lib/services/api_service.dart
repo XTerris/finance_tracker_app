@@ -11,8 +11,9 @@ import 'api_exceptions.dart';
 enum HttpMethod { get, post, put, delete, patch }
 
 class ApiService {
-  static const String _defaultServerIp =
-      'localhost'; // '192.168.1.142'; // '172.16.0.31';
+  static const String _defaultServerIp = '192.168.1.142';
+  // static const String _defaultServerIp = 'localhost';
+  // static const String _defaultServerIp = '172.16.0.31';
   static const String _defaultServerPort = '8001';
   static const Duration _timeout = Duration(seconds: 5);
 
