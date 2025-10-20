@@ -90,6 +90,30 @@ class TransactionProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> updateTransaction({
+    required int id,
+    String? title,
+    int? categoryId,
+  }) async {
+    try {
+      final updatedTransaction = await serviceLocator.apiService
+          .updateTransaction(id: id, title: title, categoryId: categoryId);
+
+      // Update the local transaction list
+      final index = _transactions.indexWhere((t) => t.id == id);
+      if (index != -1) {
+        _transactions[index] = updatedTransaction;
+        await serviceLocator.hiveService.saveTransactions([updatedTransaction]);
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Error updating transaction: $e');
+      throw Exception(
+        'Не удалось обновить транзакцию. Проверьте подключение к интернету.',
+      );
+    }
+  }
+
   Future<void> removeTransaction(int id) async {
     try {
       await serviceLocator.apiService.deleteTransaction(id);

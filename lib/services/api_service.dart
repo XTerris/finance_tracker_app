@@ -380,6 +380,22 @@ class ApiService {
     return Transaction.fromJson(data);
   }
 
+  Future<Transaction> updateTransaction({
+    required int id,
+    String? title,
+    int? categoryId,
+  }) async {
+    final data = await _makeRequest(
+      HttpMethod.put,
+      '/transactions/$id',
+      body: {
+        if (title != null) 'title': title,
+        if (categoryId != null) 'category_id': categoryId,
+      },
+    );
+    return Transaction.fromJson(data);
+  }
+
   Future<void> deleteTransaction(int id) async {
     await _makeRequest(HttpMethod.delete, '/transactions/$id');
   }
