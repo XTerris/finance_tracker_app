@@ -45,6 +45,29 @@ class AccountProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> updateAccount({
+    required int id,
+    String? name,
+    double? balance,
+  }) async {
+    try {
+      final updatedAccount = await serviceLocator.apiService.updateAccount(
+        id: id,
+        name: name,
+        balance: balance,
+      );
+
+      _accounts[id] = updatedAccount;
+      await serviceLocator.hiveService.saveAccounts([updatedAccount]);
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error updating account: $e');
+      throw Exception(
+        'Не удалось обновить счёт. Проверьте подключение к интернету.',
+      );
+    }
+  }
+
   Future<void> removeAccount(int id) async {
     await serviceLocator.apiService.deleteAccount(id);
     _accounts.remove(id);

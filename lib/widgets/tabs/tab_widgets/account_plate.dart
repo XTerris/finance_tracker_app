@@ -6,6 +6,8 @@ import 'package:provider/provider.dart';
 
 import '../../../models/account.dart';
 import 'add_goal_bottom_sheet.dart';
+import 'edit_account_bottom_sheet.dart';
+import 'edit_goal_bottom_sheet.dart';
 
 class AccountPlate extends StatelessWidget {
   final Account account;
@@ -308,6 +310,29 @@ class AccountPlate extends StatelessWidget {
                     spacing: 8,
                     children: [
                       TextButton.icon(
+                        onPressed: () {
+                          showModalBottomSheet(
+                            context: context,
+                            isScrollControlled: true,
+                            shape: const RoundedRectangleBorder(
+                              borderRadius: BorderRadius.vertical(
+                                top: Radius.circular(20),
+                              ),
+                            ),
+                            builder:
+                                (context) => EditGoalBottomSheet(goal: goal),
+                          );
+                        },
+                        icon: const Icon(Icons.edit, size: 18),
+                        label: const Text('Изменить'),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                        ),
+                      ),
+                      TextButton.icon(
                         onPressed:
                             () => _toggleGoalCompletion(
                               context,
@@ -350,9 +375,32 @@ class AccountPlate extends StatelessWidget {
           ),
 
           const SizedBox(height: 8),
-          TextButton(
-            onPressed: () => _showDeleteConfirmation(context),
-            child: const Text("Удалить счёт"),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton.icon(
+                onPressed: () {
+                  showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    shape: const RoundedRectangleBorder(
+                      borderRadius: BorderRadius.vertical(
+                        top: Radius.circular(20),
+                      ),
+                    ),
+                    builder:
+                        (context) => EditAccountBottomSheet(account: account),
+                  );
+                },
+                icon: const Icon(Icons.edit),
+                label: const Text("Изменить"),
+              ),
+              TextButton.icon(
+                onPressed: () => _showDeleteConfirmation(context),
+                icon: const Icon(Icons.delete),
+                label: const Text("Удалить счёт"),
+              ),
+            ],
           ),
         ],
       ),

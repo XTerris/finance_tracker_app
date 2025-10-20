@@ -436,6 +436,22 @@ class ApiService {
     return Account.fromJson(data);
   }
 
+  Future<Account> updateAccount({
+    required int id,
+    String? name,
+    double? balance,
+  }) async {
+    final data = await _makeRequest(
+      HttpMethod.put,
+      '/accounts/$id',
+      body: {
+        if (name != null) 'name': name,
+        if (balance != null) 'balance': balance,
+      },
+    );
+    return Account.fromJson(data);
+  }
+
   Future<void> deleteAccount(int id) async {
     await _makeRequest(HttpMethod.delete, '/accounts/$id');
   }
