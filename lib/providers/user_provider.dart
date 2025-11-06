@@ -10,7 +10,7 @@ class UserProvider extends ChangeNotifier {
   bool get isReady => _isReady;
 
   Future<void> init() async {
-    // Get default user from database (created on first launch)
+    // Get default user from database (created on first launch or if deleted)
     _currentUser = await serviceLocator.databaseService.getDefaultUser();
 
     _isReady = true;

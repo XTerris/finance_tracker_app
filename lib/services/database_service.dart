@@ -121,9 +121,13 @@ class DatabaseService {
     });
   }
 
-  Future<User?> getDefaultUser() async {
+  Future<User> getDefaultUser() async {
     final users = await getAllUsers();
-    return users.isNotEmpty ? users.first : null;
+    if (users.isEmpty) {
+      // If no users exist, create default user to ensure app remains usable
+      return await createUser('Default User', 'user@local.app');
+    }
+    return users.first;
   }
 
   Future<User> createUser(String name, String email) async {
