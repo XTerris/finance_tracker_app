@@ -1,18 +1,8 @@
-import 'package:hive/hive.dart';
-
-part 'goal.g.dart';
-
-@HiveType(typeId: 4)
 class Goal {
-  @HiveField(0)
   final int id;
-  @HiveField(1)
   final int accountId;
-  @HiveField(2)
   final double targetAmount;
-  @HiveField(3)
   final DateTime deadline;
-  @HiveField(4)
   bool isCompleted;
 
   Goal({

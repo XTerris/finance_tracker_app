@@ -1,5 +1,4 @@
-import 'services/api_service.dart';
-import 'services/hive_service.dart';
+import 'services/database_service.dart';
 
 class ServiceLocator {
   static final ServiceLocator _instance = ServiceLocator._internal();
@@ -8,22 +7,17 @@ class ServiceLocator {
 
   ServiceLocator._internal();
 
-  late ApiService _apiService;
-  late HiveService _hiveService;
+  late DatabaseService _databaseService;
 
   static Future<void> init() async {
-    await ApiService.init();
-    await HiveService.init();
-    _instance._apiService = ApiService();
-    _instance._hiveService = HiveService();
+    await DatabaseService.init();
+    _instance._databaseService = DatabaseService();
   }
 
-  ApiService get apiService => _apiService;
-  HiveService get hiveService => _hiveService;
+  DatabaseService get databaseService => _databaseService;
 
   Future<void> dispose() async {
-    _apiService.dispose();
-    await _hiveService.dispose();
+    await _databaseService.dispose();
   }
 }
 

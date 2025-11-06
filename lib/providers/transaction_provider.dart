@@ -1,4 +1,3 @@
-import 'package:finance_tracker_app/services/api_exceptions.dart';
 import 'package:flutter/foundation.dart';
 import '../models/transaction.dart';
 import '../service_locator.dart';
@@ -14,51 +13,14 @@ class TransactionProvider extends ChangeNotifier {
   }
 
   Future<void> init() async {
-    // Initialize with data from cache
-    _transactions = await serviceLocator.hiveService.getAllTransactions();
+    // Initialize with data from database
+    _transactions = await serviceLocator.databaseService.getAllTransactions();
     notifyListeners();
-
-    // Try to update from server, but don't fail if offline
-    try {
-      await update();
-    } catch (e) {
-      debugPrint('Could not update transactions from server: $e');
-    }
   }
 
   Future<void> update() async {
-    final lastUpdate =
-        await serviceLocator.hiveService.getUpdateTransactionsTimestamp();
-    final timestamp = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-    if (lastUpdate == null) {
-      _transactions = await serviceLocator.apiService.getAllTransactions();
-      await serviceLocator.hiveService.saveTransactions(_transactions);
-      await serviceLocator.hiveService.setUpdateTransactionsTimestamp(
-        timestamp,
-      );
-      notifyListeners();
-    } else {
-      final transactionIds = await serviceLocator.apiService
-          .getUpdatedTransactionIds(lastUpdate);
-      final updatedTransactions = <Transaction>[];
-      for (final id in transactionIds) {
-        try {
-          final transaction = await serviceLocator.apiService.getTransaction(
-            id,
-          );
-          updatedTransactions.add(transaction);
-        } on NotFoundException {
-          // If transaction not found, it means it was deleted
-          serviceLocator.hiveService.deleteTransaction(id);
-        }
-      }
-      await serviceLocator.hiveService.saveTransactions(updatedTransactions);
-      await serviceLocator.hiveService.setUpdateTransactionsTimestamp(
-        timestamp,
-      );
-      _transactions = await serviceLocator.hiveService.getAllTransactions();
-    }
-    notifyListeners();
+    // Reload data from database
+    await init();
   }
 
   Future<void> addTransaction({
@@ -69,25 +31,17 @@ class TransactionProvider extends ChangeNotifier {
     int? toAccountId,
     DateTime? doneAt,
   }) async {
-    try {
-      final transaction = await serviceLocator.apiService.createTransaction(
-        title: title,
-        amount: amount,
-        categoryId: categoryId,
-        doneAt: doneAt,
-        fromAccountId: fromAccountId,
-        toAccountId: toAccountId,
-      );
+    final transaction = await serviceLocator.databaseService.createTransaction(
+      title: title,
+      amount: amount,
+      categoryId: categoryId,
+      doneAt: doneAt,
+      fromAccountId: fromAccountId,
+      toAccountId: toAccountId,
+    );
 
-      _transactions.add(transaction);
-      await serviceLocator.hiveService.saveTransactions([transaction]);
-      notifyListeners();
-    } catch (e) {
-      debugPrint('Error adding transaction: $e');
-      throw Exception(
-        'Не удалось создать транзакцию. Проверьте подключение к интернету.',
-      );
-    }
+    _transactions.add(transaction);
+    notifyListeners();
   }
 
   Future<void> updateTransaction({
@@ -95,36 +49,20 @@ class TransactionProvider extends ChangeNotifier {
     String? title,
     int? categoryId,
   }) async {
-    try {
-      final updatedTransaction = await serviceLocator.apiService
-          .updateTransaction(id: id, title: title, categoryId: categoryId);
+    final updatedTransaction = await serviceLocator.databaseService
+        .updateTransaction(id: id, title: title, categoryId: categoryId);
 
-      // Update the local transaction list
-      final index = _transactions.indexWhere((t) => t.id == id);
-      if (index != -1) {
-        _transactions[index] = updatedTransaction;
-        await serviceLocator.hiveService.saveTransactions([updatedTransaction]);
-        notifyListeners();
-      }
-    } catch (e) {
-      debugPrint('Error updating transaction: $e');
-      throw Exception(
-        'Не удалось обновить транзакцию. Проверьте подключение к интернету.',
-      );
+    // Update the local transaction list
+    final index = _transactions.indexWhere((t) => t.id == id);
+    if (index != -1) {
+      _transactions[index] = updatedTransaction;
+      notifyListeners();
     }
   }
 
   Future<void> removeTransaction(int id) async {
-    try {
-      await serviceLocator.apiService.deleteTransaction(id);
-      _transactions.removeWhere((transaction) => transaction.id == id);
-      await serviceLocator.hiveService.deleteTransaction(id);
-      notifyListeners();
-    } catch (e) {
-      debugPrint('Error removing transaction: $e');
-      throw Exception(
-        'Не удалось удалить транзакцию. Проверьте подключение к интернету.',
-      );
-    }
+    await serviceLocator.databaseService.deleteTransaction(id);
+    _transactions.removeWhere((transaction) => transaction.id == id);
+    notifyListeners();
   }
 }

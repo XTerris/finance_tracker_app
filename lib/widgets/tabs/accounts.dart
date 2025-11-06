@@ -39,20 +39,8 @@ class _GoalsTabState extends State<GoalsTab> {
           final accountProvider = context.read<AccountProvider>();
           final goalProvider = context.read<GoalProvider>();
 
-          try {
-            await accountProvider.update();
-            await goalProvider.update();
-          } catch (e) {
-            if (!context.mounted) return;
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text(
-                  'Не удалось обновить данные. Проверьте подключение к интернету.',
-                ),
-                backgroundColor: Colors.orange,
-              ),
-            );
-          }
+          await accountProvider.init();
+          await goalProvider.init();
         },
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),

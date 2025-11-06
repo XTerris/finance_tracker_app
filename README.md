@@ -1,16 +1,55 @@
-# finance_tracker_app
+# Finance Tracker App
 
-A new Flutter project.
+A standalone Flutter personal finance tracking application with local SQLite database.
+
+## Overview
+
+This is a complete personal finance management application that runs entirely offline with local data storage. Track your transactions, manage multiple accounts, set financial goals, and view detailed reports - all without requiring an internet connection.
+
+## Features
+
+- 💰 **Transaction Management**: Record income and expenses with categories
+- 🏦 **Multiple Accounts**: Manage different bank accounts and wallets
+- 🎯 **Financial Goals**: Set and track savings goals for your accounts
+- 📊 **Reports & Analytics**: View spending patterns and financial summaries
+- 💾 **Local Storage**: All data stored securely in local SQLite database
+- 🔒 **No Authentication Required**: Direct access with automatic default user creation
+
+## Technical Stack
+
+- **Framework**: Flutter
+- **Database**: SQLite (sqflite package)
+- **State Management**: Provider pattern
+- **UI**: Material Design with Russian localization
+
+## Architecture
+
+The app follows a clean architecture pattern:
+
+- **Models**: Data classes for User, Transaction, Category, Account, and Goal
+- **Services**: DatabaseService handles all SQL operations
+- **Providers**: State management for each entity type
+- **Widgets**: Reusable UI components and tab-based navigation
+
+## Database Schema
+
+SQLite database with the following tables:
+- `users` - User information
+- `categories` - Transaction categories
+- `accounts` - Financial accounts
+- `transactions` - Income and expense records
+- `goals` - Savings goals linked to accounts
 
 ## Getting Started
 
-This project is a starting point for a Flutter application.
+1. Clone the repository
+2. Run `flutter pub get` to install dependencies
+3. Run `flutter run` to launch the app
+4. A default user will be created automatically on first launch
 
-A few resources to get you started if this is your first Flutter project:
+## Development
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+This app was originally designed as a client for a backend server but has been transformed into a standalone application. All API and caching layers have been replaced with direct SQLite database operations.
 
 For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+[online documentation](https://docs.flutter.dev/).

@@ -13,35 +13,23 @@ class AccountProvider extends ChangeNotifier {
   }
 
   Future<void> init() async {
-    // Initialize with data from cache
-    final accounts = await serviceLocator.hiveService.getAllAccounts();
+    // Initialize with data from database
+    final accounts = await serviceLocator.databaseService.getAllAccounts();
     _accounts = {for (var account in accounts) account.id: account};
     notifyListeners();
-
-    // Try to update from server, but don't fail if offline
-    try {
-      await update();
-    } catch (e) {
-      debugPrint('Could not update accounts from server: $e');
-    }
   }
 
   Future<void> update() async {
-    final accounts = await serviceLocator.apiService.getAllAccounts();
-    _accounts = {for (var account in accounts) account.id: account};
-    await serviceLocator.hiveService.clearAllAccounts();
-    await serviceLocator.hiveService.saveAccounts(accounts);
-    notifyListeners();
+    // Reload data from database
+    await init();
   }
 
   Future<void> addAccount(String accountName, double initialBalance) async {
-    final account = await serviceLocator.apiService.createAccount(
+    final account = await serviceLocator.databaseService.createAccount(
       accountName,
       initialBalance,
     );
     _accounts[account.id] = account;
-    await serviceLocator.hiveService.saveAccounts([account]);
-
     notifyListeners();
   }
 
@@ -50,28 +38,19 @@ class AccountProvider extends ChangeNotifier {
     String? name,
     double? balance,
   }) async {
-    try {
-      final updatedAccount = await serviceLocator.apiService.updateAccount(
-        id: id,
-        name: name,
-        balance: balance,
-      );
+    final updatedAccount = await serviceLocator.databaseService.updateAccount(
+      id: id,
+      name: name,
+      balance: balance,
+    );
 
-      _accounts[id] = updatedAccount;
-      await serviceLocator.hiveService.saveAccounts([updatedAccount]);
-      notifyListeners();
-    } catch (e) {
-      debugPrint('Error updating account: $e');
-      throw Exception(
-        'Не удалось обновить счёт. Проверьте подключение к интернету.',
-      );
-    }
+    _accounts[id] = updatedAccount;
+    notifyListeners();
   }
 
   Future<void> removeAccount(int id) async {
-    await serviceLocator.apiService.deleteAccount(id);
+    await serviceLocator.databaseService.deleteAccount(id);
     _accounts.remove(id);
-    await serviceLocator.hiveService.deleteAccount(id);
     notifyListeners();
   }
 }

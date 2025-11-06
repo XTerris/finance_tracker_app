@@ -25,23 +25,10 @@ class _HistoryTabState extends State<HistoryTab> {
           final accountProvider = context.read<AccountProvider>();
           final goalProvider = context.read<GoalProvider>();
 
-          try {
-            await transactionProvider.update();
-            await categoryProvider.update();
-            await accountProvider.update();
-            await goalProvider.update();
-          } catch (e) {
-            if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text(
-                    'Не удалось обновить данные. Проверьте подключение к интернету.',
-                  ),
-                  backgroundColor: Colors.orange,
-                ),
-              );
-            }
-          }
+          await transactionProvider.init();
+          await categoryProvider.init();
+          await accountProvider.init();
+          await goalProvider.init();
         },
         child: ListView(
           physics: AlwaysScrollableScrollPhysics(),

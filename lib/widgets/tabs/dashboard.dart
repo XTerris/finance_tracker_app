@@ -13,31 +13,6 @@ class DashboardTab extends StatefulWidget {
 }
 
 class _DashboardTabState extends State<DashboardTab> {
-  void _showLogoutDialog(UserProvider userProvider) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Выход'),
-          content: const Text('Вы уверены, что хотите выйти из аккаунта?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Отмена'),
-            ),
-            FilledButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // hide dialog
-                userProvider.logout();
-              },
-              child: const Text('Выйти'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -63,12 +38,6 @@ class _DashboardTabState extends State<DashboardTab> {
                           ),
                         ),
                   ),
-                ),
-                IconButton(
-                  onPressed:
-                      () => _showLogoutDialog(context.read<UserProvider>()),
-                  icon: const Icon(Icons.logout),
-                  tooltip: 'Выйти',
                 ),
               ],
             ),
