@@ -19,6 +19,11 @@ class AccountProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> update() async {
+    // Reload data from database
+    await init();
+  }
+
   Future<void> addAccount(String accountName, double initialBalance) async {
     final account = await serviceLocator.databaseService.createAccount(
       accountName,

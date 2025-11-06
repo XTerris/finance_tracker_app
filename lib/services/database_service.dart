@@ -1,7 +1,7 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import '../models/user.dart';
-import '../models/transaction.dart';
+import '../models/transaction.dart' as models;
 import '../models/category.dart';
 import '../models/account.dart';
 import '../models/goal.dart';
@@ -236,10 +236,10 @@ class DatabaseService {
   }
 
   // Transaction operations
-  Future<List<Transaction>> getAllTransactions() async {
+  Future<List<models.Transaction>> getAllTransactions() async {
     final List<Map<String, dynamic>> maps = await _db.query(_transactionTable);
     return List.generate(maps.length, (i) {
-      return Transaction(
+      return models.Transaction(
         id: maps[i]['id'],
         title: maps[i]['title'],
         amount: maps[i]['amount'],
@@ -251,7 +251,7 @@ class DatabaseService {
     });
   }
 
-  Future<Transaction> getTransaction(int id) async {
+  Future<models.Transaction> getTransaction(int id) async {
     final List<Map<String, dynamic>> maps = await _db.query(
       _transactionTable,
       where: 'id = ?',
@@ -262,7 +262,7 @@ class DatabaseService {
       throw Exception('Transaction not found');
     }
 
-    return Transaction(
+    return models.Transaction(
       id: maps[0]['id'],
       title: maps[0]['title'],
       amount: maps[0]['amount'],
@@ -273,7 +273,7 @@ class DatabaseService {
     );
   }
 
-  Future<Transaction> createTransaction({
+  Future<models.Transaction> createTransaction({
     required String title,
     required double amount,
     required int categoryId,
@@ -297,7 +297,7 @@ class DatabaseService {
     return getTransaction(id);
   }
 
-  Future<Transaction> updateTransaction({
+  Future<models.Transaction> updateTransaction({
     required int id,
     String? title,
     int? categoryId,

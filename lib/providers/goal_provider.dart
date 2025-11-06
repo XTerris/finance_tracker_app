@@ -28,6 +28,11 @@ class GoalProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> update() async {
+    // Reload data from database
+    await init();
+  }
+
   Future<void> addGoal({
     required int accountId,
     required double targetAmount,
