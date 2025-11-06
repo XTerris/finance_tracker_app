@@ -22,24 +22,9 @@ class GoalProvider extends ChangeNotifier {
   }
 
   Future<void> init() async {
-    // Initialize with data from cache
-    final goals = await serviceLocator.hiveService.getAllGoals();
+    // Initialize with data from database
+    final goals = await serviceLocator.databaseService.getAllGoals();
     _goals = {for (var goal in goals) goal.id: goal};
-    notifyListeners();
-
-    // Try to update from server, but don't fail if offline
-    try {
-      await update();
-    } catch (e) {
-      debugPrint('Could not update goals from server: $e');
-    }
-  }
-
-  Future<void> update() async {
-    final goals = await serviceLocator.apiService.getAllGoals();
-    _goals = {for (var goal in goals) goal.id: goal};
-    await serviceLocator.hiveService.clearAllGoals();
-    await serviceLocator.hiveService.saveGoals(goals);
     notifyListeners();
   }
 
@@ -48,13 +33,12 @@ class GoalProvider extends ChangeNotifier {
     required double targetAmount,
     required DateTime deadline,
   }) async {
-    final goal = await serviceLocator.apiService.createGoal(
+    final goal = await serviceLocator.databaseService.createGoal(
       accountId: accountId,
       targetAmount: targetAmount,
       deadline: deadline,
     );
     _goals[goal.id] = goal;
-    await serviceLocator.hiveService.saveGoals([goal]);
     notifyListeners();
   }
 
@@ -65,7 +49,7 @@ class GoalProvider extends ChangeNotifier {
     DateTime? deadline,
     bool? isCompleted,
   }) async {
-    final goal = await serviceLocator.apiService.updateGoal(
+    final goal = await serviceLocator.databaseService.updateGoal(
       id: id,
       accountId: accountId,
       targetAmount: targetAmount,
@@ -73,28 +57,30 @@ class GoalProvider extends ChangeNotifier {
       isCompleted: isCompleted,
     );
     _goals[goal.id] = goal;
-    await serviceLocator.hiveService.saveGoals([goal]);
     notifyListeners();
   }
 
   Future<void> markGoalComplete(int id) async {
-    final goal = await serviceLocator.apiService.markGoalComplete(id);
+    final goal = await serviceLocator.databaseService.updateGoal(
+      id: id,
+      isCompleted: true,
+    );
     _goals[goal.id] = goal;
-    await serviceLocator.hiveService.saveGoals([goal]);
     notifyListeners();
   }
 
   Future<void> markGoalIncomplete(int id) async {
-    final goal = await serviceLocator.apiService.markGoalIncomplete(id);
+    final goal = await serviceLocator.databaseService.updateGoal(
+      id: id,
+      isCompleted: false,
+    );
     _goals[goal.id] = goal;
-    await serviceLocator.hiveService.saveGoals([goal]);
     notifyListeners();
   }
 
   Future<void> removeGoal(int id) async {
-    await serviceLocator.apiService.deleteGoal(id);
+    await serviceLocator.databaseService.deleteGoal(id);
     _goals.remove(id);
-    await serviceLocator.hiveService.deleteGoal(id);
     notifyListeners();
   }
 }

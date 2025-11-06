@@ -8,7 +8,6 @@ import 'providers/transaction_provider.dart';
 import 'providers/account_provider.dart';
 import 'providers/goal_provider.dart';
 import 'widgets/home_page.dart';
-import 'widgets/login_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -62,10 +61,8 @@ class App extends StatelessWidget {
             return const Scaffold(
               body: Center(child: CircularProgressIndicator()),
             );
-          } else if (userProvider.isLoggedIn) {
-            return const HomePage();
           } else {
-            return const LoginPage();
+            return const HomePage();
           }
         },
       ),
