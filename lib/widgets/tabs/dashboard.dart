@@ -8,6 +8,7 @@ import '../../providers/account_provider.dart';
 import '../../providers/category_provider.dart';
 import 'tab_widgets/transaction_plate.dart';
 
+/// Dashboard tab displaying financial statistics and recent transactions
 class DashboardTab extends StatefulWidget {
   const DashboardTab({super.key});
 
