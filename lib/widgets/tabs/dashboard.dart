@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../models/transaction.dart';
+import '../../models/account.dart';
 import '../../providers/user_provider.dart';
 import '../../providers/transaction_provider.dart';
 import '../../providers/account_provider.dart';
@@ -16,64 +17,85 @@ class DashboardTab extends StatefulWidget {
   State<DashboardTab> createState() => _DashboardTabState();
 }
 
+/// Helper class to hold calculated dashboard statistics
+class _DashboardStats {
+  final double lastMonthExpenses;
+  final double currentMonthExpenses;
+  final double currentMonthIncome;
+
+  _DashboardStats({
+    required this.lastMonthExpenses,
+    required this.currentMonthExpenses,
+    required this.currentMonthIncome,
+  });
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is _DashboardStats &&
+          runtimeType == other.runtimeType &&
+          lastMonthExpenses == other.lastMonthExpenses &&
+          currentMonthExpenses == other.currentMonthExpenses &&
+          currentMonthIncome == other.currentMonthIncome;
+
+  @override
+  int get hashCode =>
+      lastMonthExpenses.hashCode ^
+      currentMonthExpenses.hashCode ^
+      currentMonthIncome.hashCode;
+}
+
 class _DashboardTabState extends State<DashboardTab> {
-  // Calculate expenses for last month
-  double _calculateLastMonthExpenses(List<Transaction> transactions) {
+  // Calculate all dashboard statistics from transactions
+  _DashboardStats _calculateDashboardStats(List<Transaction> transactions) {
     final now = DateTime.now();
     // Handle year boundary: if current month is January, go back to December of previous year
     final lastMonth = now.month == 1 
         ? DateTime(now.year - 1, 12, 1)
         : DateTime(now.year, now.month - 1, 1);
     final lastMonthEnd = DateTime(now.year, now.month, 0, 23, 59, 59);
-    
-    double total = 0.0;
-    for (var transaction in transactions) {
-      // Expense is when money goes out from an account (has fromAccountId but no toAccountId, or amount is negative)
-      if (transaction.doneAt.isAfter(lastMonth) && 
-          transaction.doneAt.isBefore(lastMonthEnd) &&
-          transaction.fromAccountId != null && 
-          transaction.toAccountId == null) {
-        total += transaction.amount.abs();
-      }
-    }
-    return total;
-  }
-
-  // Calculate current month expenses
-  double _calculateCurrentMonthExpenses(List<Transaction> transactions) {
-    final now = DateTime.now();
     final currentMonthStart = DateTime(now.year, now.month, 1);
     
-    double total = 0.0;
+    double lastMonthExpenses = 0.0;
+    double currentMonthExpenses = 0.0;
+    double currentMonthIncome = 0.0;
+
     for (var transaction in transactions) {
-      if (transaction.doneAt.isAfter(currentMonthStart) &&
+      // Last month expenses
+      // Use !isBefore and !isAfter to include boundary transactions
+      if (!transaction.doneAt.isBefore(lastMonth) && 
+          !transaction.doneAt.isAfter(lastMonthEnd) &&
           transaction.fromAccountId != null && 
           transaction.toAccountId == null) {
-        total += transaction.amount.abs();
+        lastMonthExpenses += transaction.amount.abs();
       }
-    }
-    return total;
-  }
 
-  // Calculate current month income
-  double _calculateCurrentMonthIncome(List<Transaction> transactions) {
-    final now = DateTime.now();
-    final currentMonthStart = DateTime(now.year, now.month, 1);
-    
-    double total = 0.0;
-    for (var transaction in transactions) {
-      // Income is when money comes into an account (has toAccountId but no fromAccountId)
-      if (transaction.doneAt.isAfter(currentMonthStart) &&
+      // Current month expenses
+      // Use !isBefore to include transactions at exact start of month
+      if (!transaction.doneAt.isBefore(currentMonthStart) &&
+          transaction.fromAccountId != null && 
+          transaction.toAccountId == null) {
+        currentMonthExpenses += transaction.amount.abs();
+      }
+
+      // Current month income
+      // Use !isBefore to include transactions at exact start of month
+      if (!transaction.doneAt.isBefore(currentMonthStart) &&
           transaction.toAccountId != null && 
           transaction.fromAccountId == null) {
-        total += transaction.amount.abs();
+        currentMonthIncome += transaction.amount.abs();
       }
     }
-    return total;
+
+    return _DashboardStats(
+      lastMonthExpenses: lastMonthExpenses,
+      currentMonthExpenses: currentMonthExpenses,
+      currentMonthIncome: currentMonthIncome,
+    );
   }
 
   // Calculate total balance across all accounts
-  double _calculateTotalBalance(List accounts) {
+  double _calculateTotalBalance(List<Account> accounts) {
     return accounts.fold(0.0, (sum, account) => sum + account.balance);
   }
 
@@ -153,11 +175,13 @@ class _DashboardTabState extends State<DashboardTab> {
             SizedBox(height: 16),
             
             // Last Month Expenses & Current Month Stats
-            Consumer<TransactionProvider>(
-              builder: (context, transactionProvider, child) {
-                final lastMonthExpenses = _calculateLastMonthExpenses(transactionProvider.transactions);
-                final currentMonthExpenses = _calculateCurrentMonthExpenses(transactionProvider.transactions);
-                final currentMonthIncome = _calculateCurrentMonthIncome(transactionProvider.transactions);
+            Selector<TransactionProvider, _DashboardStats>(
+              selector: (context, transactionProvider) => 
+                  _calculateDashboardStats(transactionProvider.transactions),
+              builder: (context, stats, child) {
+                final lastMonthExpenses = stats.lastMonthExpenses;
+                final currentMonthExpenses = stats.currentMonthExpenses;
+                final currentMonthIncome = stats.currentMonthIncome;
                 
                 return Column(
                   children: [
