@@ -275,16 +275,56 @@ class DatabaseService {
     int? fromAccountId,
     int? toAccountId,
   }) async {
-    final id = await _db.insert(_transactionTable, {
-      'title': title,
-      'amount': amount,
-      'done_at': (doneAt ?? DateTime.now()).toIso8601String(),
-      'category_id': categoryId,
-      'from_account_id': fromAccountId,
-      'to_account_id': toAccountId,
-    }, conflictAlgorithm: ConflictAlgorithm.replace);
+    // Use a transaction to ensure atomicity
+    return await _db.transaction((txn) async {
+      // Insert the transaction
+      final id = await txn.insert(_transactionTable, {
+        'title': title,
+        'amount': amount,
+        'done_at': (doneAt ?? DateTime.now()).toIso8601String(),
+        'category_id': categoryId,
+        'from_account_id': fromAccountId,
+        'to_account_id': toAccountId,
+      }, conflictAlgorithm: ConflictAlgorithm.replace);
 
-    return getTransaction(id);
+      // Update account balances
+      if (fromAccountId != null) {
+        await _updateAccountBalance(txn, fromAccountId, -amount);
+      }
+      if (toAccountId != null) {
+        await _updateAccountBalance(txn, toAccountId, amount);
+      }
+
+      // Validate balance history for affected accounts
+      final accountsToValidate = <int>{};
+      if (fromAccountId != null) accountsToValidate.add(fromAccountId);
+      if (toAccountId != null) accountsToValidate.add(toAccountId);
+
+      for (final accountId in accountsToValidate) {
+        final isValid = await _validateAccountBalanceHistory(txn, accountId);
+        if (!isValid) {
+          throw Exception(
+              'Transaction would cause account balance to become negative at some point in history. Transaction rejected.');
+        }
+      }
+
+      // Retrieve and return the created transaction
+      final result = await txn.query(
+        _transactionTable,
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+
+      return models.Transaction(
+        id: result[0]['id'] as int,
+        title: result[0]['title'] as String,
+        amount: result[0]['amount'] as double,
+        doneAt: DateTime.parse(result[0]['done_at'] as String),
+        categoryId: result[0]['category_id'] as int,
+        fromAccountId: result[0]['from_account_id'] as int?,
+        toAccountId: result[0]['to_account_id'] as int?,
+      );
+    });
   }
 
   Future<models.Transaction> updateTransaction({
@@ -292,22 +332,175 @@ class DatabaseService {
     String? title,
     int? categoryId,
   }) async {
-    final Map<String, dynamic> updates = {};
-    if (title != null) updates['title'] = title;
-    if (categoryId != null) updates['category_id'] = categoryId;
+    // Use a transaction to ensure atomicity
+    return await _db.transaction((txn) async {
+      // Get the current transaction
+      final currentTxnQuery = await txn.query(
+        _transactionTable,
+        where: 'id = ?',
+        whereArgs: [id],
+      );
 
-    await _db.update(
-      _transactionTable,
-      updates,
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+      if (currentTxnQuery.isEmpty) {
+        throw Exception('Transaction not found');
+      }
 
-    return getTransaction(id);
+      final Map<String, dynamic> updates = {};
+      if (title != null) updates['title'] = title;
+      if (categoryId != null) updates['category_id'] = categoryId;
+
+      await txn.update(
+        _transactionTable,
+        updates,
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+
+      // Retrieve and return the updated transaction
+      final result = await txn.query(
+        _transactionTable,
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+
+      return models.Transaction(
+        id: result[0]['id'] as int,
+        title: result[0]['title'] as String,
+        amount: result[0]['amount'] as double,
+        doneAt: DateTime.parse(result[0]['done_at'] as String),
+        categoryId: result[0]['category_id'] as int,
+        fromAccountId: result[0]['from_account_id'] as int?,
+        toAccountId: result[0]['to_account_id'] as int?,
+      );
+    });
   }
 
   Future<void> deleteTransaction(int id) async {
-    await _db.delete(_transactionTable, where: 'id = ?', whereArgs: [id]);
+    // Use a transaction to ensure atomicity
+    await _db.transaction((txn) async {
+      // Get the transaction before deleting it
+      final txnQuery = await txn.query(
+        _transactionTable,
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+
+      if (txnQuery.isEmpty) {
+        throw Exception('Transaction not found');
+      }
+
+      final transaction = txnQuery[0];
+      final amount = transaction['amount'] as double;
+      final fromAccountId = transaction['from_account_id'] as int?;
+      final toAccountId = transaction['to_account_id'] as int?;
+
+      // Delete the transaction
+      await txn.delete(_transactionTable, where: 'id = ?', whereArgs: [id]);
+
+      // Reverse the balance changes
+      if (fromAccountId != null) {
+        await _updateAccountBalance(txn, fromAccountId, amount);
+      }
+      if (toAccountId != null) {
+        await _updateAccountBalance(txn, toAccountId, -amount);
+      }
+
+      // Validate balance history for affected accounts
+      final accountsToValidate = <int>{};
+      if (fromAccountId != null) accountsToValidate.add(fromAccountId);
+      if (toAccountId != null) accountsToValidate.add(toAccountId);
+
+      for (final accountId in accountsToValidate) {
+        final isValid = await _validateAccountBalanceHistory(txn, accountId);
+        if (!isValid) {
+          throw Exception(
+              'Deleting this transaction would cause account balance to become negative at some point in history. Deletion rejected.');
+        }
+      }
+    });
+  }
+
+  // Helper method to update account balance within a transaction
+  Future<void> _updateAccountBalance(
+      DatabaseExecutor txn, int accountId, double amountChange) async {
+    await txn.rawUpdate('''
+      UPDATE $_accountTable
+      SET balance = balance + ?
+      WHERE id = ?
+    ''', [amountChange, accountId]);
+  }
+
+  // Helper method to validate that account balance never goes negative in history
+  // This method simulates the balance changes chronologically to ensure
+  // the balance was never negative at any point
+  Future<bool> _validateAccountBalanceHistory(
+      DatabaseExecutor txn, int accountId) async {
+    // Get the account's current balance from the database
+    final accountQuery = await txn.query(
+      _accountTable,
+      where: 'id = ?',
+      whereArgs: [accountId],
+    );
+
+    if (accountQuery.isEmpty) {
+      throw Exception('Account not found');
+    }
+
+    final currentBalance = accountQuery[0]['balance'] as double;
+
+    // Get all transactions for this account, ordered by date (oldest first)
+    final transactions = await txn.query(
+      _transactionTable,
+      where: 'from_account_id = ? OR to_account_id = ?',
+      whereArgs: [accountId, accountId],
+      orderBy: 'done_at ASC',
+    );
+
+    // Calculate the initial balance (before any transactions)
+    double runningBalance = currentBalance;
+    
+    // Work backwards from current balance by reversing all transaction effects
+    for (final txn in transactions.reversed) {
+      final amount = txn['amount'] as double;
+      final fromAccountId = txn['from_account_id'] as int?;
+      final toAccountId = txn['to_account_id'] as int?;
+
+      if (fromAccountId == accountId) {
+        runningBalance += amount; // Reverse the debit
+      }
+      if (toAccountId == accountId) {
+        runningBalance -= amount; // Reverse the credit
+      }
+    }
+
+    // Now we have the initial balance, simulate forward
+    double balance = runningBalance;
+    
+    // Initial balance must be non-negative
+    if (balance < 0) {
+      return false;
+    }
+
+    // Simulate each transaction chronologically
+    for (final txn in transactions) {
+      final amount = txn['amount'] as double;
+      final fromAccountId = txn['from_account_id'] as int?;
+      final toAccountId = txn['to_account_id'] as int?;
+
+      if (fromAccountId == accountId) {
+        balance -= amount;
+      }
+      if (toAccountId == accountId) {
+        balance += amount;
+      }
+
+      // Check if balance went negative at this point
+      if (balance < 0) {
+        return false;
+      }
+    }
+
+    return true;
   }
 
   // Goal operations
