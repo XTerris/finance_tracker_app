@@ -154,6 +154,16 @@ class _DashboardTabState extends State<DashboardTab> {
             
             SizedBox(height: 16),
             
+            // Current Month Stats label
+            Text(
+              'за текущий месяц',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey[600],
+              ),
+            ),
+            SizedBox(height: 8),
+            
             // Current Month Stats
             Selector<TransactionProvider, _DashboardStats>(
               selector: (context, transactionProvider) => 
@@ -188,14 +198,6 @@ class _DashboardTabState extends State<DashboardTab> {
                                       ),
                                     ),
                                   ],
-                                ),
-                                SizedBox(height: 4),
-                                Text(
-                                  'за текущий месяц',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: Colors.grey[600],
-                                  ),
                                 ),
                                 SizedBox(height: 8),
                                 Text(
@@ -233,14 +235,6 @@ class _DashboardTabState extends State<DashboardTab> {
                                       ),
                                     ),
                                   ],
-                                ),
-                                SizedBox(height: 4),
-                                Text(
-                                  'за текущий месяц',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: Colors.grey[600],
-                                  ),
                                 ),
                                 SizedBox(height: 8),
                                 Text(
