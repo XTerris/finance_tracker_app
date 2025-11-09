@@ -241,44 +241,6 @@ class _DashboardTabState extends State<DashboardTab> {
                         ),
                       ],
                     ),
-                    SizedBox(height: 16),
-                    // Net balance for current month
-                    Container(
-                      width: double.infinity,
-                      padding: EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.tertiaryContainer,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(Icons.account_balance_wallet, size: 20),
-                              SizedBox(width: 8),
-                              Text(
-                                'Баланс за текущий месяц',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                          Text(
-                            currencyFormat.format(currentMonthIncome - currentMonthExpenses),
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: (currentMonthIncome - currentMonthExpenses) >= 0 
-                                ? Colors.green[700] 
-                                : Colors.red[700],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
                   ],
                 );
               },
