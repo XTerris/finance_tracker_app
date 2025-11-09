@@ -37,8 +37,7 @@ class _DashboardStats {
 
   @override
   int get hashCode =>
-      currentMonthExpenses.hashCode ^
-      currentMonthIncome.hashCode;
+      currentMonthExpenses.hashCode ^ currentMonthIncome.hashCode;
 }
 
 class _DashboardTabState extends State<DashboardTab> {
@@ -46,7 +45,7 @@ class _DashboardTabState extends State<DashboardTab> {
   _DashboardStats _calculateDashboardStats(List<Transaction> transactions) {
     final now = DateTime.now();
     final currentMonthStart = DateTime(now.year, now.month, 1);
-    
+
     double currentMonthExpenses = 0.0;
     double currentMonthIncome = 0.0;
 
@@ -54,7 +53,7 @@ class _DashboardTabState extends State<DashboardTab> {
       // Current month expenses
       // Use !isBefore to include transactions at exact start of month
       if (!transaction.doneAt.isBefore(currentMonthStart) &&
-          transaction.fromAccountId != null && 
+          transaction.fromAccountId != null &&
           transaction.toAccountId == null) {
         currentMonthExpenses += transaction.amount.abs();
       }
@@ -62,7 +61,7 @@ class _DashboardTabState extends State<DashboardTab> {
       // Current month income
       // Use !isBefore to include transactions at exact start of month
       if (!transaction.doneAt.isBefore(currentMonthStart) &&
-          transaction.toAccountId != null && 
+          transaction.toAccountId != null &&
           transaction.fromAccountId == null) {
         currentMonthIncome += transaction.amount.abs();
       }
@@ -81,8 +80,12 @@ class _DashboardTabState extends State<DashboardTab> {
 
   @override
   Widget build(BuildContext context) {
-    final currencyFormat = NumberFormat.currency(locale: 'ru_RU', symbol: '₽', decimalDigits: 0);
-    
+    final currencyFormat = NumberFormat.currency(
+      locale: 'ru_RU',
+      symbol: '₽',
+      decimalDigits: 0,
+    );
+
     return SingleChildScrollView(
       child: Padding(
         padding: EdgeInsets.all(16.0),
@@ -96,23 +99,26 @@ class _DashboardTabState extends State<DashboardTab> {
               children: [
                 Expanded(
                   child: Consumer<UserProvider>(
-                    builder: (context, userProvider, child) => Text(
-                      'Добрый день, ${userProvider.currentUser!.name}!',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    builder:
+                        (context, userProvider, child) => Text(
+                          'Добрый день, ${userProvider.currentUser!.name}!',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                   ),
                 ),
               ],
             ),
             SizedBox(height: 24),
-            
+
             // Total Balance Card
             Consumer<AccountProvider>(
               builder: (context, accountProvider, child) {
-                final totalBalance = _calculateTotalBalance(accountProvider.accounts);
+                final totalBalance = _calculateTotalBalance(
+                  accountProvider.accounts,
+                );
                 return Container(
                   width: double.infinity,
                   padding: EdgeInsets.all(20),
@@ -151,24 +157,26 @@ class _DashboardTabState extends State<DashboardTab> {
                 );
               },
             ),
-            
+
             SizedBox(height: 16),
-            
+
             // Current Month Stats label
             Text(
-              'за текущий месяц',
+              'В текущем месяце',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 16),
-            
+
             // Current Month Stats
             Selector<TransactionProvider, _DashboardStats>(
-              selector: (context, transactionProvider) => 
-                  _calculateDashboardStats(transactionProvider.transactions),
+              selector:
+                  (context, transactionProvider) => _calculateDashboardStats(
+                    transactionProvider.transactions,
+                  ),
               builder: (context, stats, child) {
                 final currentMonthExpenses = stats.currentMonthExpenses;
                 final currentMonthIncome = stats.currentMonthIncome;
-                
+
                 return Column(
                   children: [
                     Row(
@@ -177,7 +185,10 @@ class _DashboardTabState extends State<DashboardTab> {
                           child: Container(
                             padding: EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.secondaryContainer,
+                              color:
+                                  Theme.of(
+                                    context,
+                                  ).colorScheme.secondaryContainer,
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Column(
@@ -185,7 +196,11 @@ class _DashboardTabState extends State<DashboardTab> {
                               children: [
                                 Row(
                                   children: [
-                                    Icon(Icons.arrow_downward, size: 20, color: Colors.green[700]),
+                                    Icon(
+                                      Icons.arrow_downward,
+                                      size: 20,
+                                      color: Colors.green[700],
+                                    ),
                                     SizedBox(width: 8),
                                     Text(
                                       'Доходы',
@@ -214,7 +229,10 @@ class _DashboardTabState extends State<DashboardTab> {
                           child: Container(
                             padding: EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.secondaryContainer,
+                              color:
+                                  Theme.of(
+                                    context,
+                                  ).colorScheme.secondaryContainer,
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Column(
@@ -222,7 +240,11 @@ class _DashboardTabState extends State<DashboardTab> {
                               children: [
                                 Row(
                                   children: [
-                                    Icon(Icons.arrow_upward, size: 20, color: Colors.red[700]),
+                                    Icon(
+                                      Icons.arrow_upward,
+                                      size: 20,
+                                      color: Colors.red[700],
+                                    ),
                                     SizedBox(width: 8),
                                     Text(
                                       'Расходы',
@@ -252,7 +274,7 @@ class _DashboardTabState extends State<DashboardTab> {
                 );
               },
             ),
-            
+
             SizedBox(height: 24),
             Text(
               'Последние операции',
