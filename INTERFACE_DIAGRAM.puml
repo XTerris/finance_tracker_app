@@ -1,0 +1,352 @@
+@startuml
+title Finance Tracker - Interface Components (UI Layer)
+
+top to bottom direction
+skinparam linetype ortho
+skinparam shadowing false
+hide empty members
+skinparam classAttributeIconSize 0
+skinparam ranksep 45
+skinparam nodesep 32
+skinparam ArrowFontSize 12
+skinparam ArrowThickness 1
+skinparam ClassBorderThickness 1
+
+' ---------- APPLICATION ROOT ----------
+class App <<StatelessWidget>> {
+  --
+  + build(context: BuildContext): Widget
+}
+
+class HomePage <<StatefulWidget>> {
+  - _currentIndex: int
+  - _tabs: List<Widget>
+  --
+  + _setCurrentIndex(index: int): void
+  + build(context: BuildContext): Widget
+}
+
+class NavigationBar <<StatelessWidget>> {
+  + currentIndex: int
+  + onTap: ValueChanged<int>
+  --
+  + build(context: BuildContext): Widget
+}
+
+class NoThumbScrollBehavior <<ScrollBehavior>> {
+  + dragDevices: Set<PointerDeviceKind>
+}
+
+' ---------- TAB SCREENS (Main Views) ----------
+class DashboardTab <<StatefulWidget>> {
+  --
+  - _calculateDashboardStats(transactions: List<Transaction>): _DashboardStats
+  - _calculateTotalBalance(accounts: List<Account>): double
+  + build(context: BuildContext): Widget
+}
+
+class HistoryTab <<StatefulWidget>> {
+  --
+  - _showAddTransactionBottomSheet(): void
+  + build(context: BuildContext): Widget
+}
+
+class GoalsTab <<StatefulWidget>> {
+  --
+  - _formatBalance(balance: double): String
+  - _showAddAccountBottomSheet(): void
+  + build(context: BuildContext): Widget
+}
+
+class ReportsTab <<StatefulWidget>> {
+  --
+  + build(context: BuildContext): Widget
+}
+
+' ---------- DISPLAY COMPONENTS (Plates) ----------
+class TransactionPlate <<StatelessWidget>> {
+  + transaction: Transaction
+  + margin: EdgeInsetsGeometry?
+  --
+  + build(context: BuildContext): Widget
+}
+
+class AccountPlate <<StatelessWidget>> {
+  + account: Account
+  + margin: EdgeInsetsGeometry?
+  --
+  - _formatBalance(balance: double): String
+  - _formatDate(date: DateTime): String
+  - _showDeleteConfirmation(context: BuildContext): Future<void>
+  - _showAddGoalBottomSheet(context: BuildContext): void
+  - _deleteGoal(context: BuildContext, goalId: int): Future<void>
+  - _toggleGoalCompletion(context: BuildContext, goalId: int, isCompleted: bool): Future<void>
+  + build(context: BuildContext): Widget
+}
+
+' ---------- BOTTOM SHEETS (Add Forms) ----------
+class AddTransactionBottomSheet <<StatefulWidget>> {
+  - _formKey: GlobalKey<FormState>
+  - _titleController: TextEditingController
+  - _amountController: TextEditingController
+  - _selectedCategoryId: int?
+  - _transactionType: TransactionType
+  - _selectedFromAccountId: int?
+  - _selectedToAccountId: int?
+  - _selectedDate: DateTime
+  - _isLoading: bool
+  --
+  - _selectDate(context: BuildContext): Future<void>
+  - _selectTime(context: BuildContext): Future<void>
+  - _createNewCategory(context: BuildContext): Future<void>
+  - _submitForm(): Future<void>
+  - _showSnackBar(message: String, isError: bool): void
+  + build(context: BuildContext): Widget
+}
+
+class AddAccountBottomSheet <<StatefulWidget>> {
+  - _formKey: GlobalKey<FormState>
+  - _nameController: TextEditingController
+  - _balanceController: TextEditingController
+  - _isLoading: bool
+  --
+  - _submitForm(): Future<void>
+  + build(context: BuildContext): Widget
+}
+
+class AddGoalBottomSheet <<StatefulWidget>> {
+  + account: Account
+  - _formKey: GlobalKey<FormState>
+  - _targetAmountController: TextEditingController
+  - _selectedDeadline: DateTime?
+  - _isLoading: bool
+  --
+  - _selectDate(): Future<void>
+  - _submitForm(): Future<void>
+  - _formatDate(date: DateTime): String
+  + build(context: BuildContext): Widget
+}
+
+' ---------- BOTTOM SHEETS (Edit Forms) ----------
+class EditTransactionBottomSheet <<StatefulWidget>> {
+  + transaction: Transaction
+  - _formKey: GlobalKey<FormState>
+  - _titleController: TextEditingController
+  - _selectedCategoryId: int?
+  - _isLoading: bool
+  --
+  - _createNewCategory(context: BuildContext): Future<void>
+  - _submitForm(): Future<void>
+  - _showSnackBar(message: String, isError: bool): void
+  + build(context: BuildContext): Widget
+}
+
+class EditAccountBottomSheet <<StatefulWidget>> {
+  + account: Account
+  - _formKey: GlobalKey<FormState>
+  - _nameController: TextEditingController
+  - _balanceController: TextEditingController
+  - _isLoading: bool
+  --
+  - _submitForm(): Future<void>
+  + build(context: BuildContext): Widget
+}
+
+class EditGoalBottomSheet <<StatefulWidget>> {
+  + goal: Goal
+  - _formKey: GlobalKey<FormState>
+  - _targetAmountController: TextEditingController
+  - _selectedDeadline: DateTime
+  - _isLoading: bool
+  --
+  - _selectDate(context: BuildContext): Future<void>
+  - _submitForm(): Future<void>
+  + build(context: BuildContext): Widget
+}
+
+' ---------- PROVIDERS (State Management) ----------
+class UserProvider <<ChangeNotifier>> {
+  - _currentUser: User?
+  + isReady: bool
+  + currentUser: User?
+  --
+  + init(): Future<void>
+  + update(): Future<void>
+}
+
+class AccountProvider <<ChangeNotifier>> {
+  - _accounts: Map<int, Account>
+  + accounts: List<Account>
+  --
+  + init(): Future<void>
+  + update(): Future<void>
+  + addAccount(name: String, initialBalance: double): Future<void>
+  + updateAccount(id: int, name: String?, balance: double?): Future<void>
+  + removeAccount(id: int): Future<void>
+}
+
+class TransactionProvider <<ChangeNotifier>> {
+  - _transactions: Map<int, Transaction>
+  + transactions: List<Transaction>
+  --
+  + init(): Future<void>
+  + update(): Future<void>
+  + addTransaction(title: String, amount: double, categoryId: int, fromAccountId: int?, toAccountId: int?, doneAt: DateTime): Future<void>
+  + updateTransaction(id: int, title: String?, categoryId: int?): Future<void>
+  + removeTransaction(id: int): Future<void>
+}
+
+class CategoryProvider <<ChangeNotifier>> {
+  - _categories: Map<int, Category>
+  + categories: List<Category>
+  --
+  + init(): Future<void>
+  + update(): Future<void>
+  + addCategory(name: String): Future<void>
+  + updateCategory(id: int, name: String): Future<void>
+  + removeCategory(id: int): Future<void>
+}
+
+class GoalProvider <<ChangeNotifier>> {
+  - _goals: Map<int, Goal>
+  + goals: List<Goal>
+  --
+  + init(): Future<void>
+  + update(): Future<void>
+  + getGoalByAccountId(accountId: int): Goal?
+  + addGoal(accountId: int, targetAmount: double, deadline: DateTime): Future<void>
+  + updateGoal(id: int, targetAmount: double?, deadline: DateTime?): Future<void>
+  + removeGoal(id: int): Future<void>
+  + markGoalComplete(id: int): Future<void>
+  + markGoalIncomplete(id: int): Future<void>
+}
+
+' ---------- HELPER CLASSES ----------
+class _DashboardStats <<Helper>> {
+  + currentMonthExpenses: double
+  + currentMonthIncome: double
+  --
+  + ==(other: Object): bool
+  + hashCode: int
+}
+
+enum TransactionType {
+  expense
+  income
+  transfer
+}
+
+' ---------- RELATIONSHIPS ----------
+
+' App structure
+App --> HomePage
+HomePage *-- NavigationBar
+HomePage *-- NoThumbScrollBehavior
+
+' HomePage contains tabs
+HomePage *-- DashboardTab
+HomePage *-- HistoryTab
+HomePage *-- GoalsTab
+HomePage *-- ReportsTab
+
+' Tabs use providers
+DashboardTab ..> UserProvider
+DashboardTab ..> AccountProvider
+DashboardTab ..> TransactionProvider
+DashboardTab ..> _DashboardStats
+
+HistoryTab ..> TransactionProvider
+HistoryTab ..> CategoryProvider
+HistoryTab ..> AccountProvider
+HistoryTab ..> GoalProvider
+
+GoalsTab ..> AccountProvider
+GoalsTab ..> GoalProvider
+
+' Tabs use display components
+DashboardTab --> TransactionPlate
+HistoryTab --> TransactionPlate
+GoalsTab --> AccountPlate
+
+' Tabs open bottom sheets
+HistoryTab ..> AddTransactionBottomSheet
+GoalsTab ..> AddAccountBottomSheet
+
+' Display components use providers and open bottom sheets
+TransactionPlate ..> TransactionProvider
+TransactionPlate ..> AccountProvider
+TransactionPlate ..> GoalProvider
+TransactionPlate ..> EditTransactionBottomSheet
+
+AccountPlate ..> AccountProvider
+AccountPlate ..> GoalProvider
+AccountPlate ..> EditAccountBottomSheet
+AccountPlate ..> AddGoalBottomSheet
+AccountPlate ..> EditGoalBottomSheet
+
+' Add forms use providers
+AddTransactionBottomSheet ..> TransactionProvider
+AddTransactionBottomSheet ..> CategoryProvider
+AddTransactionBottomSheet ..> AccountProvider
+AddTransactionBottomSheet ..> GoalProvider
+AddTransactionBottomSheet -- TransactionType
+
+AddAccountBottomSheet ..> AccountProvider
+AddAccountBottomSheet ..> GoalProvider
+
+AddGoalBottomSheet ..> GoalProvider
+
+' Edit forms use providers
+EditTransactionBottomSheet ..> TransactionProvider
+EditTransactionBottomSheet ..> CategoryProvider
+EditTransactionBottomSheet ..> AccountProvider
+EditTransactionBottomSheet ..> GoalProvider
+
+EditAccountBottomSheet ..> AccountProvider
+EditAccountBottomSheet ..> GoalProvider
+
+EditGoalBottomSheet ..> GoalProvider
+
+' ---------- LAYOUT ANCHORS (hidden, to reduce whitespace & crossings) ----------
+
+' Top row: App → HomePage → NavigationBar
+App -[hidden]- HomePage
+HomePage -[hidden]- NavigationBar
+NavigationBar -[hidden]- NoThumbScrollBehavior
+
+' Second row: Main tabs
+DashboardTab -[hidden]- HistoryTab
+HistoryTab -[hidden]- GoalsTab
+GoalsTab -[hidden]- ReportsTab
+
+' Third row: Display components
+TransactionPlate -[hidden]- AccountPlate
+
+' Fourth row: Add forms
+AddTransactionBottomSheet -[hidden]- AddAccountBottomSheet
+AddAccountBottomSheet -[hidden]- AddGoalBottomSheet
+
+' Fifth row: Edit forms
+EditTransactionBottomSheet -[hidden]- EditAccountBottomSheet
+EditAccountBottomSheet -[hidden]- EditGoalBottomSheet
+
+' Sixth row: Providers
+UserProvider -[hidden]- AccountProvider
+AccountProvider -[hidden]- TransactionProvider
+TransactionProvider -[hidden]- CategoryProvider
+CategoryProvider -[hidden]- GoalProvider
+
+' Seventh row: Helpers
+_DashboardStats -[hidden]- TransactionType
+
+' Vertical alignment
+App -[hidden]down-> DashboardTab
+HomePage -[hidden]down-> HistoryTab
+DashboardTab -[hidden]down-> TransactionPlate
+HistoryTab -[hidden]down-> AddTransactionBottomSheet
+TransactionPlate -[hidden]down-> EditTransactionBottomSheet
+AddTransactionBottomSheet -[hidden]down-> UserProvider
+EditTransactionBottomSheet -[hidden]down-> AccountProvider
+UserProvider -[hidden]down-> _DashboardStats
+
+@enduml
