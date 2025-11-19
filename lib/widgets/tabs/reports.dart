@@ -1,4 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
+import 'package:fl_chart/fl_chart.dart';
+import '../../providers/transaction_provider.dart';
+import '../../providers/category_provider.dart';
+import '../../providers/account_provider.dart';
+
+enum ChartType {
+  none,
+  bar,
+  pie,
+  line,
+}
+
+enum ReportView {
+  summary,
+  chartSelection,
+  chartView,
+  forecast,
+}
 
 class ReportsTab extends StatefulWidget {
   const ReportsTab({super.key});
@@ -8,155 +28,1194 @@ class ReportsTab extends StatefulWidget {
 }
 
 class _ReportsTabState extends State<ReportsTab> {
-  @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: Padding(
-        padding: EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.start,
+  DateTime _startDate = DateTime.now().subtract(const Duration(days: 30));
+  DateTime _endDate = DateTime.now();
+  ReportView _currentView = ReportView.summary;
+  ChartType _selectedChartType = ChartType.none;
 
+  String _formatDate(DateTime date) {
+    return DateFormat('dd.MM.yyyy').format(date);
+  }
+
+  String _formatCurrency(double amount) {
+    final formatter = NumberFormat.currency(
+      locale: 'ru_RU',
+      symbol: '₽',
+      decimalDigits: 2,
+    );
+    return formatter.format(amount);
+  }
+
+  Future<void> _selectDateRange() async {
+    final DateTimeRange? picked = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now(),
+      initialDateRange: DateTimeRange(start: _startDate, end: _endDate),
+      locale: const Locale('ru', 'RU'),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null) {
+      setState(() {
+        _startDate = picked.start;
+        _endDate = picked.end;
+      });
+    }
+  }
+
+  Map<String, double> _calculateStatistics(List transactions) {
+    double totalIncome = 0;
+    double totalExpense = 0;
+
+    for (var transaction in transactions) {
+      final date = transaction.doneAt;
+      if (date.isAfter(_startDate.subtract(const Duration(days: 1))) &&
+          date.isBefore(_endDate.add(const Duration(days: 1)))) {
+        // Determine transaction type based on account IDs
+        final hasFromAccount = transaction.fromAccountId != null;
+        final hasToAccount = transaction.toAccountId != null;
+        
+        if (hasToAccount && !hasFromAccount) {
+          // Income: money coming into an account
+          totalIncome += transaction.amount;
+        } else if (hasFromAccount && !hasToAccount) {
+          // Expense: money leaving an account
+          totalExpense += transaction.amount;
+        }
+        // Transfers (both accounts set) are not counted in income/expense
+      }
+    }
+
+    return {
+      'income': totalIncome,
+      'expense': totalExpense,
+      'balance': totalIncome - totalExpense,
+    };
+  }
+
+  String _calculateForecast(double totalBalance, double avgMonthlyExpense) {
+    if (avgMonthlyExpense <= 0) {
+      return 'Расходы отсутствуют, прогноз не требуется';
+    }
+    
+    final months = (totalBalance / avgMonthlyExpense).floor();
+    
+    if (months == 0) {
+      return 'Текущего баланса недостаточно для покрытия средних месячных расходов';
+    } else if (months == 1) {
+      return 'Общий баланс счетов позволит сохранить текущий уровень расходов в течение 1 месяца';
+    } else if (months < 5) {
+      return 'Общий баланс счетов позволит сохранить текущий уровень расходов в течение $months месяцев';
+    } else {
+      return 'Общий баланс счетов позволит сохранить текущий уровень расходов в течение $months месяцев';
+    }
+  }
+
+  void _exportReport() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Экспорт отчёта в PDF (функция в разработке)'),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
+  void _shareReport() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Отправка отчёта (функция в разработке)'),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
+  void _exportChartImage() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Экспорт диаграммы (функция в разработке)'),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
+  Widget _buildSummaryView() {
+    return Consumer3<TransactionProvider, CategoryProvider, AccountProvider>(
+      builder: (context, transactionProvider, categoryProvider,
+          accountProvider, child) {
+        final transactions = transactionProvider.transactions;
+        final stats = _calculateStatistics(transactions);
+        final accounts = accountProvider.accounts;
+        final totalBalance = accounts.fold<double>(
+          0,
+          (sum, account) => sum + account.balance,
+        );
+
+        // Calculate average monthly expense
+        final daysDiff = _endDate.difference(_startDate).inDays;
+        final monthsDiff = daysDiff / 30.0;
+        final avgMonthlyExpense = monthsDiff > 0 ? stats['expense']! / monthsDiff : 0.0;
+
+        return SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 32),
+                const Text(
+                  'Отчёты',
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 16),
+                
+                // Period selection
+                GestureDetector(
+                  onTap: _selectDateRange,
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primaryContainer,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Период: ${_formatDate(_startDate)} - ${_formatDate(_endDate)}',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const Icon(Icons.calendar_today),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Statistics card
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.secondaryContainer,
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Статистика',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Всего доходов: ${_formatCurrency(stats['income']!)}',
+                        style: const TextStyle(fontSize: 14),
+                      ),
+                      Text(
+                        'Всего расходов: ${_formatCurrency(stats['expense']!)}',
+                        style: const TextStyle(fontSize: 14),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Charts button
+                ElevatedButton.icon(
+                  onPressed: () {
+                    setState(() {
+                      _currentView = ReportView.chartSelection;
+                    });
+                  },
+                  icon: const Icon(Icons.bar_chart),
+                  label: const Text('Построить диаграмму'),
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 48),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Forecast button and card
+                ElevatedButton.icon(
+                  onPressed: () {
+                    setState(() {
+                      _currentView = ReportView.forecast;
+                    });
+                  },
+                  icon: const Icon(Icons.trending_up),
+                  label: const Text('Просмотр прогноза'),
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 48),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Export options
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.secondaryContainer,
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Экспорт отчёта',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          foregroundColor: Colors.white,
+                          minimumSize: const Size(double.infinity, 48),
+                        ),
+                        onPressed: _exportReport,
+                        icon: const Icon(Icons.picture_as_pdf),
+                        label: const Text('Сохранить PDF'),
+                      ),
+                      const SizedBox(height: 8),
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          foregroundColor: Colors.white,
+                          minimumSize: const Size(double.infinity, 48),
+                        ),
+                        onPressed: _shareReport,
+                        icon: const Icon(Icons.share),
+                        label: const Text('Отправить в сообщении'),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildChartSelectionView() {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 32),
+          Row(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () {
+                  setState(() {
+                    _currentView = ReportView.summary;
+                  });
+                },
+              ),
+              const Text(
+                'Выбор типа диаграммы',
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          _buildChartTypeCard(
+            ChartType.pie,
+            'Круговая диаграмма',
+            'Расходы по категориям за выбранный период',
+            Icons.pie_chart,
+          ),
+          const SizedBox(height: 16),
+          _buildChartTypeCard(
+            ChartType.bar,
+            'Столбчатая диаграмма',
+            'Расходы по дням',
+            Icons.bar_chart,
+          ),
+          const SizedBox(height: 16),
+          _buildChartTypeCard(
+            ChartType.line,
+            'Линейная диаграмма',
+            'Расходы по дням',
+            Icons.show_chart,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildChartTypeCard(
+    ChartType type,
+    String title,
+    String description,
+    IconData icon,
+  ) {
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedChartType = type;
+          _currentView = ReportView.chartView;
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.secondaryContainer,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
           children: [
-            SizedBox(height: 32),
-            Text(
-              'Отчёты',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 16),
-            Text(
-              'Расходы за период 01.02.2025-01.03.2025',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 16),
-            Container(
-              width: double.infinity,
-              padding: EdgeInsets.all(16),
-              margin: EdgeInsets.only(bottom: 16), // added only for test
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.secondaryContainer,
-                borderRadius: BorderRadius.circular(24),
-              ),
+            Icon(icon, size: 48),
+            const SizedBox(width: 16),
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Статистика',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    title,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                  SizedBox(height: 8),
                   Text(
-                    'Всего потрачено: 123456\nВсего начислено: 123456',
-                    style: TextStyle(fontSize: 14),
+                    description,
+                    style: const TextStyle(fontSize: 14),
                   ),
                 ],
               ),
             ),
-            SizedBox(height: 16),
-            Container(
-              width: double.infinity,
-              padding: EdgeInsets.all(16),
-              margin: EdgeInsets.only(bottom: 16), // added only for test
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.secondaryContainer,
-                borderRadius: BorderRadius.circular(24),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Прогнозы',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    'Общий баланс счетов позволит сохранить текущий уровень расходов в течение 2 месяцев',
-                    style: TextStyle(fontSize: 14),
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(height: 16),
-            Container(
-              width: double.infinity,
-              padding: EdgeInsets.all(16),
-              margin: EdgeInsets.only(bottom: 16), // added only for test
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.secondaryContainer,
-                borderRadius: BorderRadius.circular(24),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'График',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                  SizedBox(height: 8),
-                  Text('...', style: TextStyle(fontSize: 14)),
-                ],
-              ),
-            ),
-            SizedBox(height: 16),
-            Container(
-              width: double.infinity,
-              padding: EdgeInsets.all(16),
-              margin: EdgeInsets.only(bottom: 16), // added only for test
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.secondaryContainer,
-                borderRadius: BorderRadius.circular(24),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Поделиться',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                  SizedBox(height: 8),
-                  TextButton(
-                    style: ButtonStyle(
-                      backgroundColor: WidgetStateProperty.all<Color>(
-                        Colors.green,
-                      ),
-                      foregroundColor: WidgetStateProperty.all<Color>(
-                        Colors.white,
-                      ),
-                      padding: WidgetStateProperty.all<EdgeInsets>(
-                        EdgeInsets.symmetric(vertical: 14, horizontal: 30),
-                      ),
-                    ),
-                    onPressed: () => (),
-                    child: Text(
-                      'Сохранить PDF',
-                      style: TextStyle(fontSize: 14),
-                    ),
-                  ),
-                  SizedBox(height: 8),
-                  TextButton(
-                    style: ButtonStyle(
-                      backgroundColor: WidgetStateProperty.all<Color>(
-                        Colors.green,
-                      ),
-                      foregroundColor: WidgetStateProperty.all<Color>(
-                        Colors.white,
-                      ),
-                      padding: WidgetStateProperty.all<EdgeInsets>(
-                        EdgeInsets.symmetric(vertical: 14, horizontal: 30),
-                      ),
-                    ),
-                    onPressed: () => (),
-                    child: Text(
-                      'Отправить в сообщении',
-                      style: TextStyle(fontSize: 14),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            const Icon(Icons.arrow_forward_ios),
           ],
         ),
       ),
     );
+  }
+
+  // Calculate optimal grouping period to keep bars between 5 and 14
+  int _calculateOptimalGroupDays(int totalDays) {
+    if (totalDays <= 14) {
+      return 1; // Daily grouping
+    }
+    
+    // Try different grouping periods to find one that gives 5-14 bars
+    for (int groupDays in [2, 3, 4, 5, 6, 7, 10, 14, 21, 28, 30]) {
+      final numBars = (totalDays / groupDays).ceil();
+      if (numBars >= 5 && numBars <= 14) {
+        return groupDays;
+      }
+    }
+    
+    // If no ideal grouping found, calculate custom period
+    return (totalDays / 10).ceil(); // Aim for ~10 bars
+  }
+
+  Widget _buildChartView() {
+    return Consumer2<TransactionProvider, CategoryProvider>(
+      builder: (context, transactionProvider, categoryProvider, child) {
+        final transactions = transactionProvider.transactions;
+        final categories = categoryProvider.categories;
+
+        // Filter transactions by date range
+        final filteredTransactions = transactions.where((t) {
+          return t.doneAt.isAfter(_startDate.subtract(const Duration(days: 1))) &&
+              t.doneAt.isBefore(_endDate.add(const Duration(days: 1)));
+        }).toList();
+
+        // Prepare data based on chart type
+        Map<String, double> chartData = {};
+        Map<String, String> chartDataRanges = {}; // Store period ranges for tooltips
+        
+        if (_selectedChartType == ChartType.pie) {
+          // Calculate expenses by category for pie chart
+          for (var transaction in filteredTransactions) {
+            final hasFromAccount = transaction.fromAccountId != null;
+            final hasToAccount = transaction.toAccountId != null;
+            
+            if (hasFromAccount && !hasToAccount) {
+              String categoryName = 'Неизвестная категория';
+              
+              if (categories.isNotEmpty) {
+                try {
+                  final category = categories.firstWhere(
+                    (c) => c.id == transaction.categoryId,
+                  );
+                  categoryName = category.name;
+                } catch (e) {
+                  categoryName = 'Неизвестная категория';
+                }
+              }
+              
+              chartData[categoryName] =
+                  (chartData[categoryName] ?? 0) + transaction.amount;
+            }
+          }
+        } else {
+          // Calculate expenses by periods for bar and line charts
+          // First, create a map with all days in the period (with 0 values)
+          final Map<String, double> allDaysMap = {};
+          DateTime currentDate = DateTime(_startDate.year, _startDate.month, _startDate.day);
+          final endDate = DateTime(_endDate.year, _endDate.month, _endDate.day);
+          
+          while (currentDate.isBefore(endDate) || currentDate.isAtSameMomentAs(endDate)) {
+            final dateKey = DateFormat('dd.MM.yyyy').format(currentDate);
+            allDaysMap[dateKey] = 0.0;
+            currentDate = currentDate.add(const Duration(days: 1));
+          }
+          
+          // Then, fill in actual transaction amounts
+          for (var transaction in filteredTransactions) {
+            final hasFromAccount = transaction.fromAccountId != null;
+            final hasToAccount = transaction.toAccountId != null;
+            
+            if (hasFromAccount && !hasToAccount) {
+              final dateKey = DateFormat('dd.MM.yyyy').format(transaction.doneAt);
+              if (allDaysMap.containsKey(dateKey)) {
+                allDaysMap[dateKey] = allDaysMap[dateKey]! + transaction.amount;
+              }
+            }
+          }
+          
+          // Sort by date
+          final sortedEntries = allDaysMap.entries.toList()
+            ..sort((a, b) {
+              final dateA = DateFormat('dd.MM.yyyy').parse(a.key);
+              final dateB = DateFormat('dd.MM.yyyy').parse(b.key);
+              return dateA.compareTo(dateB);
+            });
+          
+          // Calculate optimal grouping for better readability
+          final totalDays = sortedEntries.length;
+          final groupDays = _calculateOptimalGroupDays(totalDays);
+          
+          if (groupDays == 1) {
+            // Daily grouping - no need to group
+            chartData = Map.fromEntries(sortedEntries);
+            // For daily data, range is just the single day
+            for (var entry in sortedEntries) {
+              final date = DateFormat('dd.MM.yyyy').parse(entry.key);
+              chartDataRanges[entry.key] = DateFormat('dd.MM.yyyy').format(date);
+            }
+          } else {
+            // Group by periods
+            final Map<String, double> groupedData = {};
+            final Map<String, DateTime> periodStarts = {};
+            final Map<String, DateTime> periodEnds = {};
+            
+            DateTime? periodStart;
+            String? periodKey;
+            int daysInCurrentPeriod = 0;
+            
+            for (int i = 0; i < sortedEntries.length; i++) {
+              final entry = sortedEntries[i];
+              final date = DateFormat('dd.MM.yyyy').parse(entry.key);
+              
+              if (periodStart == null || daysInCurrentPeriod >= groupDays) {
+                // Start a new period
+                periodStart = date;
+                periodKey = DateFormat('dd.MM').format(periodStart);
+                periodStarts[periodKey] = periodStart;
+                daysInCurrentPeriod = 0;
+                groupedData[periodKey] = 0.0;
+              }
+              
+              // Add to current period
+              groupedData[periodKey!] = groupedData[periodKey]! + entry.value;
+              periodEnds[periodKey] = date;
+              daysInCurrentPeriod++;
+            }
+            
+            chartData = groupedData;
+            
+            // Create range strings for tooltips
+            periodStarts.forEach((key, start) {
+              final end = periodEnds[key]!;
+              if (start == end) {
+                chartDataRanges[key] = DateFormat('dd.MM.yyyy').format(start);
+              } else {
+                chartDataRanges[key] = '${DateFormat('dd.MM.yyyy').format(start)} - ${DateFormat('dd.MM.yyyy').format(end)}';
+              }
+            });
+          }
+        }
+
+        return SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 32),
+                Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.arrow_back),
+                      onPressed: () {
+                        setState(() {
+                          _currentView = ReportView.summary;
+                        });
+                      },
+                    ),
+                    const Text(
+                      'Диаграмма',
+                      style:
+                          TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.secondaryContainer,
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _getChartTitle(),
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      // Chart visualization
+                      if (chartData.isEmpty)
+                        const Text('Нет данных для отображения')
+                      else if (_selectedChartType == ChartType.line)
+                        // Line chart visualization for daily expenses
+                        _buildLineChart(chartData, chartDataRanges)
+                      else if (_selectedChartType == ChartType.bar)
+                        // Bar chart visualization for daily expenses
+                        _buildBarChart(chartData, chartDataRanges)
+                      else if (_selectedChartType == ChartType.pie)
+                        // Pie chart visualization for expenses by category
+                        _buildPieChart(chartData)
+                      else
+                        const Text('Неизвестный тип диаграммы'),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton.icon(
+                  onPressed: _exportChartImage,
+                  icon: const Icon(Icons.download),
+                  label: const Text('Экспорт изображения'),
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 48),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  String _getChartTitle() {
+    switch (_selectedChartType) {
+      case ChartType.pie:
+        return 'Круговая диаграмма расходов по категориям';
+      case ChartType.bar:
+        return 'Столбчатая диаграмма расходов по дням';
+      case ChartType.line:
+        return 'Линейная диаграмма расходов по дням';
+      case ChartType.none:
+        return 'Диаграмма';
+    }
+  }
+
+  Widget _buildLineChart(Map<String, double> chartData, Map<String, String> chartDataRanges) {
+    if (chartData.isEmpty) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(32.0),
+          child: Text('Нет данных для отображения'),
+        ),
+      );
+    }
+
+    // Parse dates and create spots for the line chart
+    final List<FlSpot> spots = [];
+    final List<String> labels = [];
+    final List<double> amounts = [];
+    
+    chartData.forEach((dateStr, amount) {
+      labels.add(dateStr);
+      amounts.add(amount);
+    });
+    
+    // Create spots with index as X and amount as Y
+    for (int i = 0; i < labels.length; i++) {
+      spots.add(FlSpot(i.toDouble(), amounts[i]));
+    }
+    
+    // Find min and max for better scaling
+    final maxY = amounts.reduce((a, b) => a > b ? a : b);
+    final minY = amounts.reduce((a, b) => a < b ? a : b);
+    
+    return Column(
+      children: [
+        SizedBox(
+          height: 300,
+          child: LineChart(
+            LineChartData(
+              gridData: FlGridData(
+                show: true,
+                drawVerticalLine: true,
+                horizontalInterval: maxY > 0 ? maxY / 5 : 1,
+                getDrawingHorizontalLine: (value) {
+                  return FlLine(
+                    color: Colors.grey.withOpacity(0.3),
+                    strokeWidth: 1,
+                  );
+                },
+                getDrawingVerticalLine: (value) {
+                  return FlLine(
+                    color: Colors.grey.withOpacity(0.3),
+                    strokeWidth: 1,
+                  );
+                },
+              ),
+              titlesData: FlTitlesData(
+                show: true,
+                rightTitles: const AxisTitles(
+                  sideTitles: SideTitles(showTitles: false),
+                ),
+                topTitles: const AxisTitles(
+                  sideTitles: SideTitles(showTitles: false),
+                ),
+                bottomTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 30,
+                    interval: 1,
+                    getTitlesWidget: (value, meta) {
+                      final index = value.toInt();
+                      if (index < 0 || index >= labels.length) {
+                        return const Text('');
+                      }
+                      // Show label (could be date or week)
+                      final label = labels[index];
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 8.0),
+                        child: Transform.rotate(
+                          angle: -0.5,  // Rotate labels to prevent overlap
+                          child: Text(
+                            label,
+                            style: const TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                leftTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    interval: maxY > 0 ? maxY / 5 : 1,
+                    reservedSize: 60,
+                    getTitlesWidget: (value, meta) {
+                      return Text(
+                        _formatCurrency(value),
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+              borderData: FlBorderData(
+                show: true,
+                border: Border.all(color: Colors.grey.withOpacity(0.3)),
+              ),
+              minX: 0,
+              maxX: (spots.length - 1).toDouble(),
+              minY: minY > 0 ? 0 : minY * 1.1,
+              maxY: maxY * 1.1,
+              lineBarsData: [
+                LineChartBarData(
+                  spots: spots,
+                  isCurved: true,
+                  color: Theme.of(context).colorScheme.primary,
+                  barWidth: 3,
+                  isStrokeCapRound: true,
+                  dotData: FlDotData(
+                    show: true,
+                    getDotPainter: (spot, percent, barData, index) {
+                      return FlDotCirclePainter(
+                        radius: 4,
+                        color: Theme.of(context).colorScheme.primary,
+                        strokeWidth: 2,
+                        strokeColor: Colors.white,
+                      );
+                    },
+                  ),
+                  belowBarData: BarAreaData(
+                    show: true,
+                    color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                  ),
+                ),
+              ],
+              lineTouchData: LineTouchData(
+                enabled: true,
+                touchTooltipData: LineTouchTooltipData(
+                  getTooltipItems: (touchedSpots) {
+                    return touchedSpots.map((spot) {
+                      final index = spot.x.toInt();
+                      if (index < 0 || index >= labels.length) {
+                        return null;
+                      }
+                      final label = labels[index];
+                      final range = chartDataRanges[label] ?? label;
+                      final amount = spot.y;
+                      return LineTooltipItem(
+                        '$range\n${_formatCurrency(amount)}',
+                        const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      );
+                    }).toList();
+                  },
+                ),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        // Show summary statistics
+        Wrap(
+          spacing: 16,
+          runSpacing: 8,
+          children: [
+            _buildStatChip('Всего периодов', labels.length.toString()),
+            _buildStatChip('Средние расходы', _formatCurrency(amounts.reduce((a, b) => a + b) / amounts.length)),
+            _buildStatChip('Максимум', _formatCurrency(maxY)),
+            _buildStatChip('Минимум', _formatCurrency(minY)),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatChip(String label, String value) {
+    return Chip(
+      label: Text(
+        '$label: $value',
+        style: const TextStyle(fontSize: 12),
+      ),
+      backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+    );
+  }
+
+  Widget _buildBarChart(Map<String, double> chartData, Map<String, String> chartDataRanges) {
+    if (chartData.isEmpty) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(32.0),
+          child: Text('Нет данных для отображения'),
+        ),
+      );
+    }
+
+    // Parse labels and create bar groups
+    final List<BarChartGroupData> barGroups = [];
+    final List<String> labels = [];
+    final List<double> amounts = [];
+    
+    chartData.forEach((label, amount) {
+      labels.add(label);
+      amounts.add(amount);
+    });
+    
+    // Create bar groups with index as X
+    for (int i = 0; i < labels.length; i++) {
+      barGroups.add(
+        BarChartGroupData(
+          x: i,
+          barRods: [
+            BarChartRodData(
+              toY: amounts[i],
+              color: Theme.of(context).colorScheme.primary,
+              width: 16,
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(6),
+                topRight: Radius.circular(6),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    
+    // Find max for better scaling
+    final maxY = amounts.reduce((a, b) => a > b ? a : b);
+    final minY = amounts.reduce((a, b) => a < b ? a : b);
+    
+    return Column(
+      children: [
+        SizedBox(
+          height: 300,
+          child: BarChart(
+            BarChartData(
+              alignment: BarChartAlignment.spaceAround,
+              maxY: maxY * 1.2,
+              minY: 0,
+              gridData: FlGridData(
+                show: true,
+                drawVerticalLine: false,
+                horizontalInterval: maxY > 0 ? maxY / 5 : 1,
+                getDrawingHorizontalLine: (value) {
+                  return FlLine(
+                    color: Colors.grey.withOpacity(0.3),
+                    strokeWidth: 1,
+                  );
+                },
+              ),
+              titlesData: FlTitlesData(
+                show: true,
+                rightTitles: const AxisTitles(
+                  sideTitles: SideTitles(showTitles: false),
+                ),
+                topTitles: const AxisTitles(
+                  sideTitles: SideTitles(showTitles: false),
+                ),
+                bottomTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 30,
+                    getTitlesWidget: (value, meta) {
+                      final index = value.toInt();
+                      if (index < 0 || index >= labels.length) {
+                        return const Text('');
+                      }
+                      // Show label (could be date or week)
+                      final label = labels[index];
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 8.0),
+                        child: Transform.rotate(
+                          angle: -0.5,  // Rotate labels to prevent overlap
+                          child: Text(
+                            label,
+                            style: const TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                leftTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    interval: maxY > 0 ? maxY / 5 : 1,
+                    reservedSize: 60,
+                    getTitlesWidget: (value, meta) {
+                      return Text(
+                        _formatCurrency(value),
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+              borderData: FlBorderData(
+                show: true,
+                border: Border.all(color: Colors.grey.withOpacity(0.3)),
+              ),
+              barGroups: barGroups,
+              barTouchData: BarTouchData(
+                enabled: true,
+                touchTooltipData: BarTouchTooltipData(
+                  getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                    if (groupIndex < 0 || groupIndex >= labels.length) {
+                      return null;
+                    }
+                    final label = labels[groupIndex];
+                    final range = chartDataRanges[label] ?? label;
+                    final amount = rod.toY;
+                    return BarTooltipItem(
+                      '$range\n${_formatCurrency(amount)}',
+                      const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        // Show summary statistics
+        Wrap(
+          spacing: 16,
+          runSpacing: 8,
+          children: [
+            _buildStatChip('Всего периодов', labels.length.toString()),
+            _buildStatChip('Средние расходы', _formatCurrency(amounts.reduce((a, b) => a + b) / amounts.length)),
+            _buildStatChip('Максимум', _formatCurrency(maxY)),
+            _buildStatChip('Минимум', _formatCurrency(minY)),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPieChart(Map<String, double> chartData) {
+    if (chartData.isEmpty) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(32.0),
+          child: Text('Нет данных для отображения'),
+        ),
+      );
+    }
+
+    // Calculate total for percentages
+    final total = chartData.values.fold<double>(0, (sum, val) => sum + val);
+    
+    // Create pie chart sections
+    final List<PieChartSectionData> sections = [];
+    final List<Color> colors = [
+      Colors.blue,
+      Colors.red,
+      Colors.green,
+      Colors.orange,
+      Colors.purple,
+      Colors.teal,
+      Colors.pink,
+      Colors.amber,
+      Colors.cyan,
+      Colors.indigo,
+    ];
+    
+    int colorIndex = 0;
+    chartData.forEach((category, amount) {
+      final percentage = (amount / total * 100);
+      sections.add(
+        PieChartSectionData(
+          value: amount,
+          title: '${percentage.toStringAsFixed(1)}%',
+          color: colors[colorIndex % colors.length],
+          radius: 110,
+          titleStyle: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+      );
+      colorIndex++;
+    });
+    
+    return Column(
+      children: [
+        SizedBox(
+          height: 300,
+          child: PieChart(
+            PieChartData(
+              sections: sections,
+              sectionsSpace: 2,
+              centerSpaceRadius: 40,
+              pieTouchData: PieTouchData(
+                enabled: true,
+                touchCallback: (FlTouchEvent event, pieTouchResponse) {
+                  // Touch handling can be added here if needed
+                },
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 24),
+        // Legend
+        Wrap(
+          spacing: 16,
+          runSpacing: 12,
+          alignment: WrapAlignment.center,
+          children: chartData.entries.toList().asMap().entries.map((entry) {
+            final index = entry.key;
+            final mapEntry = entry.value;
+            final color = colors[index % colors.length];
+            final percentage = (mapEntry.value / total * 100);
+            
+            return Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 16,
+                    height: 16,
+                    decoration: BoxDecoration(
+                      color: color,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        mapEntry.key,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        '${_formatCurrency(mapEntry.value)} (${percentage.toStringAsFixed(1)}%)',
+                        style: const TextStyle(fontSize: 11),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildForecastView() {
+    return Consumer2<TransactionProvider, AccountProvider>(
+      builder: (context, transactionProvider, accountProvider, child) {
+        final transactions = transactionProvider.transactions;
+        final accounts = accountProvider.accounts;
+        final totalBalance = accounts.fold<double>(
+          0,
+          (sum, account) => sum + account.balance,
+        );
+
+        // Calculate average monthly expense
+        final stats = _calculateStatistics(transactions);
+        final daysDiff = _endDate.difference(_startDate).inDays;
+        final monthsDiff = daysDiff / 30.0;
+        final avgMonthlyExpense =
+            monthsDiff > 0 ? stats['expense']! / monthsDiff : 0.0;
+
+        return SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 32),
+                Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.arrow_back),
+                      onPressed: () {
+                        setState(() {
+                          _currentView = ReportView.summary;
+                        });
+                      },
+                    ),
+                    const Text(
+                      'Прогноз',
+                      style:
+                          TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.secondaryContainer,
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Финансовый прогноз',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Текущий баланс: ${_formatCurrency(totalBalance)}',
+                        style: const TextStyle(fontSize: 14),
+                      ),
+                      Text(
+                        'Средние расходы в месяц: ${_formatCurrency(avgMonthlyExpense)}',
+                        style: const TextStyle(fontSize: 14),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        _calculateForecast(totalBalance, avgMonthlyExpense),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    switch (_currentView) {
+      case ReportView.summary:
+        return _buildSummaryView();
+      case ReportView.chartSelection:
+        return _buildChartSelectionView();
+      case ReportView.chartView:
+        return _buildChartView();
+      case ReportView.forecast:
+        return _buildForecastView();
+    }
   }
 }
