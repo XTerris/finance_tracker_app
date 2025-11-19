@@ -660,11 +660,14 @@ class _ReportsTabState extends State<ReportsTab> {
                       final date = dates[index];
                       return Padding(
                         padding: const EdgeInsets.only(top: 8.0),
-                        child: Text(
-                          DateFormat('dd.MM').format(date),
-                          style: const TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
+                        child: Transform.rotate(
+                          angle: -0.5,  // Rotate labels to prevent overlap
+                          child: Text(
+                            DateFormat('dd.MM').format(date),
+                            style: const TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                       );
@@ -753,7 +756,7 @@ class _ReportsTabState extends State<ReportsTab> {
           runSpacing: 8,
           children: [
             _buildStatChip('Всего дней', dates.length.toString()),
-            _buildStatChip('Средний расход', _formatCurrency(amounts.reduce((a, b) => a + b) / amounts.length)),
+            _buildStatChip('Средние расходы', _formatCurrency(amounts.reduce((a, b) => a + b) / amounts.length)),
             _buildStatChip('Максимум', _formatCurrency(maxY)),
             _buildStatChip('Минимум', _formatCurrency(minY)),
           ],
@@ -858,11 +861,14 @@ class _ReportsTabState extends State<ReportsTab> {
                       final date = dates[index];
                       return Padding(
                         padding: const EdgeInsets.only(top: 8.0),
-                        child: Text(
-                          DateFormat('dd.MM').format(date),
-                          style: const TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
+                        child: Transform.rotate(
+                          angle: -0.5,  // Rotate labels to prevent overlap
+                          child: Text(
+                            DateFormat('dd.MM').format(date),
+                            style: const TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                       );
@@ -921,7 +927,7 @@ class _ReportsTabState extends State<ReportsTab> {
           runSpacing: 8,
           children: [
             _buildStatChip('Всего дней', dates.length.toString()),
-            _buildStatChip('Средний расход', _formatCurrency(amounts.reduce((a, b) => a + b) / amounts.length)),
+            _buildStatChip('Средние расходы', _formatCurrency(amounts.reduce((a, b) => a + b) / amounts.length)),
             _buildStatChip('Максимум', _formatCurrency(maxY)),
             _buildStatChip('Минимум', _formatCurrency(minY)),
           ],
