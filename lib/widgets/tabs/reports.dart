@@ -482,7 +482,23 @@ class _ReportsTabState extends State<ReportsTab> {
               final dateB = DateFormat('dd.MM.yyyy').parse(b.key);
               return dateA.compareTo(dateB);
             });
-          chartData = Map.fromEntries(sortedEntries);
+          
+          // Check if we need to group data for better readability
+          final totalDays = sortedEntries.length;
+          if (totalDays > 14) {
+            // Group by weeks for periods longer than 2 weeks
+            final Map<String, double> weeklyData = {};
+            for (var entry in sortedEntries) {
+              final date = DateFormat('dd.MM.yyyy').parse(entry.key);
+              // Find the Monday of the week
+              final monday = date.subtract(Duration(days: date.weekday - 1));
+              final weekKey = DateFormat('dd.MM').format(monday);
+              weeklyData[weekKey] = (weeklyData[weekKey] ?? 0.0) + entry.value;
+            }
+            chartData = weeklyData;
+          } else {
+            chartData = Map.fromEntries(sortedEntries);
+          }
         }
 
         return SingleChildScrollView(
@@ -587,17 +603,16 @@ class _ReportsTabState extends State<ReportsTab> {
 
     // Parse dates and create spots for the line chart
     final List<FlSpot> spots = [];
-    final List<DateTime> dates = [];
+    final List<String> labels = [];
     final List<double> amounts = [];
     
     chartData.forEach((dateStr, amount) {
-      final date = DateFormat('dd.MM.yyyy').parse(dateStr);
-      dates.add(date);
+      labels.add(dateStr);
       amounts.add(amount);
     });
     
     // Create spots with index as X and amount as Y
-    for (int i = 0; i < dates.length; i++) {
+    for (int i = 0; i < labels.length; i++) {
       spots.add(FlSpot(i.toDouble(), amounts[i]));
     }
     
@@ -643,17 +658,17 @@ class _ReportsTabState extends State<ReportsTab> {
                     interval: 1,
                     getTitlesWidget: (value, meta) {
                       final index = value.toInt();
-                      if (index < 0 || index >= dates.length) {
+                      if (index < 0 || index >= labels.length) {
                         return const Text('');
                       }
-                      // Show date in short format
-                      final date = dates[index];
+                      // Show label (could be date or week)
+                      final label = labels[index];
                       return Padding(
                         padding: const EdgeInsets.only(top: 8.0),
                         child: Transform.rotate(
                           angle: -0.5,  // Rotate labels to prevent overlap
                           child: Text(
-                            DateFormat('dd.MM').format(date),
+                            label,
                             style: const TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.bold,
@@ -719,13 +734,13 @@ class _ReportsTabState extends State<ReportsTab> {
                   getTooltipItems: (touchedSpots) {
                     return touchedSpots.map((spot) {
                       final index = spot.x.toInt();
-                      if (index < 0 || index >= dates.length) {
+                      if (index < 0 || index >= labels.length) {
                         return null;
                       }
-                      final date = dates[index];
+                      final label = labels[index];
                       final amount = spot.y;
                       return LineTooltipItem(
-                        '${DateFormat('dd.MM.yyyy').format(date)}\n${_formatCurrency(amount)}',
+                        '$label\n${_formatCurrency(amount)}',
                         const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
@@ -745,7 +760,7 @@ class _ReportsTabState extends State<ReportsTab> {
           spacing: 16,
           runSpacing: 8,
           children: [
-            _buildStatChip('Всего дней', dates.length.toString()),
+            _buildStatChip('Всего периодов', labels.length.toString()),
             _buildStatChip('Средние расходы', _formatCurrency(amounts.reduce((a, b) => a + b) / amounts.length)),
             _buildStatChip('Максимум', _formatCurrency(maxY)),
             _buildStatChip('Минимум', _formatCurrency(minY)),
@@ -775,19 +790,18 @@ class _ReportsTabState extends State<ReportsTab> {
       );
     }
 
-    // Parse dates and create bar groups
+    // Parse labels and create bar groups
     final List<BarChartGroupData> barGroups = [];
-    final List<DateTime> dates = [];
+    final List<String> labels = [];
     final List<double> amounts = [];
     
-    chartData.forEach((dateStr, amount) {
-      final date = DateFormat('dd.MM.yyyy').parse(dateStr);
-      dates.add(date);
+    chartData.forEach((label, amount) {
+      labels.add(label);
       amounts.add(amount);
     });
     
     // Create bar groups with index as X
-    for (int i = 0; i < dates.length; i++) {
+    for (int i = 0; i < labels.length; i++) {
       barGroups.add(
         BarChartGroupData(
           x: i,
@@ -844,17 +858,17 @@ class _ReportsTabState extends State<ReportsTab> {
                     reservedSize: 30,
                     getTitlesWidget: (value, meta) {
                       final index = value.toInt();
-                      if (index < 0 || index >= dates.length) {
+                      if (index < 0 || index >= labels.length) {
                         return const Text('');
                       }
-                      // Show date in short format
-                      final date = dates[index];
+                      // Show label (could be date or week)
+                      final label = labels[index];
                       return Padding(
                         padding: const EdgeInsets.only(top: 8.0),
                         child: Transform.rotate(
                           angle: -0.5,  // Rotate labels to prevent overlap
                           child: Text(
-                            DateFormat('dd.MM').format(date),
+                            label,
                             style: const TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.bold,
@@ -891,13 +905,13 @@ class _ReportsTabState extends State<ReportsTab> {
                 enabled: true,
                 touchTooltipData: BarTouchTooltipData(
                   getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                    if (groupIndex < 0 || groupIndex >= dates.length) {
+                    if (groupIndex < 0 || groupIndex >= labels.length) {
                       return null;
                     }
-                    final date = dates[groupIndex];
+                    final label = labels[groupIndex];
                     final amount = rod.toY;
                     return BarTooltipItem(
-                      '${DateFormat('dd.MM.yyyy').format(date)}\n${_formatCurrency(amount)}',
+                      '$label\n${_formatCurrency(amount)}',
                       const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
@@ -916,7 +930,7 @@ class _ReportsTabState extends State<ReportsTab> {
           spacing: 16,
           runSpacing: 8,
           children: [
-            _buildStatChip('Всего дней', dates.length.toString()),
+            _buildStatChip('Всего периодов', labels.length.toString()),
             _buildStatChip('Средние расходы', _formatCurrency(amounts.reduce((a, b) => a + b) / amounts.length)),
             _buildStatChip('Максимум', _formatCurrency(maxY)),
             _buildStatChip('Минимум', _formatCurrency(minY)),
