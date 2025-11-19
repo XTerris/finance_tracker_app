@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'tabs/dashboard.dart';
 import 'tabs/history.dart';
+import 'tabs/accounts.dart';
 import 'tabs/reports.dart';
 
 class HomePage extends StatefulWidget {
@@ -17,6 +18,7 @@ class _HomePageState extends State<HomePage> {
   final List<Widget> _tabs = [
     DashboardTab(key: PageStorageKey('dashboard_tab')),
     HistoryTab(key: PageStorageKey('history_tab')),
+    GoalsTab(key: PageStorageKey('goals_tab')),
     ReportsTab(key: PageStorageKey('reports_tab')),
   ];
 
@@ -74,7 +76,11 @@ class NavigationBar extends StatelessWidget {
       items: const [
         BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Обзор'),
         BottomNavigationBarItem(icon: Icon(Icons.history), label: 'История'),
-        BottomNavigationBarItem(icon: Icon(Icons.assessment), label: 'Отчёты'),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.monetization_on_outlined),
+          label: 'Цели и накопления',
+        ),
+        BottomNavigationBarItem(icon: Icon(Icons.list_alt), label: 'Отчёты'),
       ],
     );
   }
