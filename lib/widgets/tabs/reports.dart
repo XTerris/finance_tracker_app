@@ -410,6 +410,24 @@ class _ReportsTabState extends State<ReportsTab> {
     );
   }
 
+  // Calculate optimal grouping period to keep bars between 5 and 14
+  int _calculateOptimalGroupDays(int totalDays) {
+    if (totalDays <= 14) {
+      return 1; // Daily grouping
+    }
+    
+    // Try different grouping periods to find one that gives 5-14 bars
+    for (int groupDays in [2, 3, 4, 5, 6, 7, 10, 14, 21, 28, 30]) {
+      final numBars = (totalDays / groupDays).ceil();
+      if (numBars >= 5 && numBars <= 14) {
+        return groupDays;
+      }
+    }
+    
+    // If no ideal grouping found, calculate custom period
+    return (totalDays / 10).ceil(); // Aim for ~10 bars
+  }
+
   Widget _buildChartView() {
     return Consumer2<TransactionProvider, CategoryProvider>(
       builder: (context, transactionProvider, categoryProvider, child) {
@@ -424,6 +442,7 @@ class _ReportsTabState extends State<ReportsTab> {
 
         // Prepare data based on chart type
         Map<String, double> chartData = {};
+        Map<String, String> chartDataRanges = {}; // Store period ranges for tooltips
         
         if (_selectedChartType == ChartType.pie) {
           // Calculate expenses by category for pie chart
@@ -450,7 +469,7 @@ class _ReportsTabState extends State<ReportsTab> {
             }
           }
         } else {
-          // Calculate expenses by day for bar and line charts
+          // Calculate expenses by periods for bar and line charts
           // First, create a map with all days in the period (with 0 values)
           final Map<String, double> allDaysMap = {};
           DateTime currentDate = DateTime(_startDate.year, _startDate.month, _startDate.day);
@@ -483,21 +502,58 @@ class _ReportsTabState extends State<ReportsTab> {
               return dateA.compareTo(dateB);
             });
           
-          // Check if we need to group data for better readability
+          // Calculate optimal grouping for better readability
           final totalDays = sortedEntries.length;
-          if (totalDays > 14) {
-            // Group by weeks for periods longer than 2 weeks
-            final Map<String, double> weeklyData = {};
+          final groupDays = _calculateOptimalGroupDays(totalDays);
+          
+          if (groupDays == 1) {
+            // Daily grouping - no need to group
+            chartData = Map.fromEntries(sortedEntries);
+            // For daily data, range is just the single day
             for (var entry in sortedEntries) {
               final date = DateFormat('dd.MM.yyyy').parse(entry.key);
-              // Find the Monday of the week
-              final monday = date.subtract(Duration(days: date.weekday - 1));
-              final weekKey = DateFormat('dd.MM').format(monday);
-              weeklyData[weekKey] = (weeklyData[weekKey] ?? 0.0) + entry.value;
+              chartDataRanges[entry.key] = DateFormat('dd.MM.yyyy').format(date);
             }
-            chartData = weeklyData;
           } else {
-            chartData = Map.fromEntries(sortedEntries);
+            // Group by periods
+            final Map<String, double> groupedData = {};
+            final Map<String, DateTime> periodStarts = {};
+            final Map<String, DateTime> periodEnds = {};
+            
+            DateTime? periodStart;
+            String? periodKey;
+            int daysInCurrentPeriod = 0;
+            
+            for (int i = 0; i < sortedEntries.length; i++) {
+              final entry = sortedEntries[i];
+              final date = DateFormat('dd.MM.yyyy').parse(entry.key);
+              
+              if (periodStart == null || daysInCurrentPeriod >= groupDays) {
+                // Start a new period
+                periodStart = date;
+                periodKey = DateFormat('dd.MM').format(periodStart);
+                periodStarts[periodKey] = periodStart;
+                daysInCurrentPeriod = 0;
+                groupedData[periodKey] = 0.0;
+              }
+              
+              // Add to current period
+              groupedData[periodKey!] = groupedData[periodKey]! + entry.value;
+              periodEnds[periodKey] = date;
+              daysInCurrentPeriod++;
+            }
+            
+            chartData = groupedData;
+            
+            // Create range strings for tooltips
+            periodStarts.forEach((key, start) {
+              final end = periodEnds[key]!;
+              if (start == end) {
+                chartDataRanges[key] = DateFormat('dd.MM.yyyy').format(start);
+              } else {
+                chartDataRanges[key] = '${DateFormat('dd.MM.yyyy').format(start)} - ${DateFormat('dd.MM.yyyy').format(end)}';
+              }
+            });
           }
         }
 
@@ -549,10 +605,10 @@ class _ReportsTabState extends State<ReportsTab> {
                         const Text('Нет данных для отображения')
                       else if (_selectedChartType == ChartType.line)
                         // Line chart visualization for daily expenses
-                        _buildLineChart(chartData)
+                        _buildLineChart(chartData, chartDataRanges)
                       else if (_selectedChartType == ChartType.bar)
                         // Bar chart visualization for daily expenses
-                        _buildBarChart(chartData)
+                        _buildBarChart(chartData, chartDataRanges)
                       else if (_selectedChartType == ChartType.pie)
                         // Pie chart visualization for expenses by category
                         _buildPieChart(chartData)
@@ -591,7 +647,7 @@ class _ReportsTabState extends State<ReportsTab> {
     }
   }
 
-  Widget _buildLineChart(Map<String, double> chartData) {
+  Widget _buildLineChart(Map<String, double> chartData, Map<String, String> chartDataRanges) {
     if (chartData.isEmpty) {
       return const Center(
         child: Padding(
@@ -738,9 +794,10 @@ class _ReportsTabState extends State<ReportsTab> {
                         return null;
                       }
                       final label = labels[index];
+                      final range = chartDataRanges[label] ?? label;
                       final amount = spot.y;
                       return LineTooltipItem(
-                        '$label\n${_formatCurrency(amount)}',
+                        '$range\n${_formatCurrency(amount)}',
                         const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
@@ -780,7 +837,7 @@ class _ReportsTabState extends State<ReportsTab> {
     );
   }
 
-  Widget _buildBarChart(Map<String, double> chartData) {
+  Widget _buildBarChart(Map<String, double> chartData, Map<String, String> chartDataRanges) {
     if (chartData.isEmpty) {
       return const Center(
         child: Padding(
@@ -909,9 +966,10 @@ class _ReportsTabState extends State<ReportsTab> {
                       return null;
                     }
                     final label = labels[groupIndex];
+                    final range = chartDataRanges[label] ?? label;
                     final amount = rod.toY;
                     return BarTooltipItem(
-                      '$label\n${_formatCurrency(amount)}',
+                      '$range\n${_formatCurrency(amount)}',
                       const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
