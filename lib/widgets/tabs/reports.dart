@@ -428,12 +428,22 @@ class _ReportsTabState extends State<ReportsTab> {
         Map<String, double> expensesByCategory = {};
         for (var transaction in filteredTransactions) {
           if (transaction.amount < 0) {
-            final category = categories.firstWhere(
-              (c) => c.id == transaction.categoryId,
-              orElse: () => categories.first,
-            );
-            expensesByCategory[category.name] =
-                (expensesByCategory[category.name] ?? 0) +
+            String categoryName = 'Неизвестная категория';
+            
+            if (categories.isNotEmpty) {
+              try {
+                final category = categories.firstWhere(
+                  (c) => c.id == transaction.categoryId,
+                );
+                categoryName = category.name;
+              } catch (e) {
+                // Category not found, use default name
+                categoryName = 'Неизвестная категория';
+              }
+            }
+            
+            expensesByCategory[categoryName] =
+                (expensesByCategory[categoryName] ?? 0) +
                     transaction.amount.abs();
           }
         }
