@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:fl_chart/fl_chart.dart';
 import '../../providers/transaction_provider.dart';
 import '../../providers/category_provider.dart';
 import '../../providers/account_provider.dart';
@@ -524,10 +525,14 @@ class _ReportsTabState extends State<ReportsTab> {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      // Simple text-based chart representation
+                      // Chart visualization
                       if (chartData.isEmpty)
                         const Text('Нет данных для отображения')
+                      else if (_selectedChartType == ChartType.line)
+                        // Line chart visualization for daily expenses
+                        _buildLineChart(chartData)
                       else
+                        // Simple bar representation for pie and bar charts
                         ...chartData.entries.map((entry) {
                           final total = chartData.values
                               .fold<double>(0, (sum, val) => sum + val);
@@ -590,6 +595,193 @@ class _ReportsTabState extends State<ReportsTab> {
       case ChartType.none:
         return 'Диаграмма';
     }
+  }
+
+  Widget _buildLineChart(Map<String, double> chartData) {
+    if (chartData.isEmpty) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(32.0),
+          child: Text('Нет данных для отображения'),
+        ),
+      );
+    }
+
+    // Parse dates and create spots for the line chart
+    final List<FlSpot> spots = [];
+    final List<DateTime> dates = [];
+    final List<double> amounts = [];
+    
+    chartData.forEach((dateStr, amount) {
+      final date = DateFormat('dd.MM.yyyy').parse(dateStr);
+      dates.add(date);
+      amounts.add(amount);
+    });
+    
+    // Create spots with index as X and amount as Y
+    for (int i = 0; i < dates.length; i++) {
+      spots.add(FlSpot(i.toDouble(), amounts[i]));
+    }
+    
+    // Find min and max for better scaling
+    final maxY = amounts.reduce((a, b) => a > b ? a : b);
+    final minY = amounts.reduce((a, b) => a < b ? a : b);
+    
+    return Column(
+      children: [
+        SizedBox(
+          height: 300,
+          child: LineChart(
+            LineChartData(
+              gridData: FlGridData(
+                show: true,
+                drawVerticalLine: true,
+                horizontalInterval: maxY > 0 ? maxY / 5 : 1,
+                getDrawingHorizontalLine: (value) {
+                  return FlLine(
+                    color: Colors.grey.withOpacity(0.3),
+                    strokeWidth: 1,
+                  );
+                },
+                getDrawingVerticalLine: (value) {
+                  return FlLine(
+                    color: Colors.grey.withOpacity(0.3),
+                    strokeWidth: 1,
+                  );
+                },
+              ),
+              titlesData: FlTitlesData(
+                show: true,
+                rightTitles: const AxisTitles(
+                  sideTitles: SideTitles(showTitles: false),
+                ),
+                topTitles: const AxisTitles(
+                  sideTitles: SideTitles(showTitles: false),
+                ),
+                bottomTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 30,
+                    interval: 1,
+                    getTitlesWidget: (value, meta) {
+                      final index = value.toInt();
+                      if (index < 0 || index >= dates.length) {
+                        return const Text('');
+                      }
+                      // Show date in short format
+                      final date = dates[index];
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 8.0),
+                        child: Text(
+                          DateFormat('dd.MM').format(date),
+                          style: const TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                leftTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    interval: maxY > 0 ? maxY / 5 : 1,
+                    reservedSize: 60,
+                    getTitlesWidget: (value, meta) {
+                      return Text(
+                        _formatCurrency(value),
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+              borderData: FlBorderData(
+                show: true,
+                border: Border.all(color: Colors.grey.withOpacity(0.3)),
+              ),
+              minX: 0,
+              maxX: (spots.length - 1).toDouble(),
+              minY: minY > 0 ? 0 : minY * 1.1,
+              maxY: maxY * 1.1,
+              lineBarsData: [
+                LineChartBarData(
+                  spots: spots,
+                  isCurved: true,
+                  color: Theme.of(context).colorScheme.primary,
+                  barWidth: 3,
+                  isStrokeCapRound: true,
+                  dotData: FlDotData(
+                    show: true,
+                    getDotPainter: (spot, percent, barData, index) {
+                      return FlDotCirclePainter(
+                        radius: 4,
+                        color: Theme.of(context).colorScheme.primary,
+                        strokeWidth: 2,
+                        strokeColor: Colors.white,
+                      );
+                    },
+                  ),
+                  belowBarData: BarAreaData(
+                    show: true,
+                    color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                  ),
+                ),
+              ],
+              lineTouchData: LineTouchData(
+                enabled: true,
+                touchTooltipData: LineTouchTooltipData(
+                  getTooltipItems: (touchedSpots) {
+                    return touchedSpots.map((spot) {
+                      final index = spot.x.toInt();
+                      if (index < 0 || index >= dates.length) {
+                        return null;
+                      }
+                      final date = dates[index];
+                      final amount = spot.y;
+                      return LineTooltipItem(
+                        '${DateFormat('dd.MM.yyyy').format(date)}\n${_formatCurrency(amount)}',
+                        const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      );
+                    }).toList();
+                  },
+                ),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        // Show summary statistics
+        Wrap(
+          spacing: 16,
+          runSpacing: 8,
+          children: [
+            _buildStatChip('Всего дней', dates.length.toString()),
+            _buildStatChip('Средний расход', _formatCurrency(amounts.reduce((a, b) => a + b) / amounts.length)),
+            _buildStatChip('Максимум', _formatCurrency(maxY)),
+            _buildStatChip('Минимум', _formatCurrency(minY)),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatChip(String label, String value) {
+    return Chip(
+      label: Text(
+        '$label: $value',
+        style: const TextStyle(fontSize: 12),
+      ),
+      backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+    );
   }
 
   Widget _buildForecastView() {
