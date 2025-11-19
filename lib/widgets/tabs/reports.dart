@@ -347,23 +347,23 @@ class _ReportsTabState extends State<ReportsTab> {
           ),
           const SizedBox(height: 24),
           _buildChartTypeCard(
-            ChartType.bar,
-            'Столбчатая диаграмма',
-            'Расходы по категориям',
-            Icons.bar_chart,
+            ChartType.pie,
+            'Круговая диаграмма',
+            'Расходы по категориям за выбранный период',
+            Icons.pie_chart,
           ),
           const SizedBox(height: 16),
           _buildChartTypeCard(
-            ChartType.pie,
-            'Круговая диаграмма',
-            'Распределение расходов',
-            Icons.pie_chart,
+            ChartType.bar,
+            'Столбчатая диаграмма',
+            'Расходы по дням',
+            Icons.bar_chart,
           ),
           const SizedBox(height: 16),
           _buildChartTypeCard(
             ChartType.line,
             'Линейная диаграмма',
-            'Динамика расходов',
+            'Расходы по дням',
             Icons.show_chart,
           ),
         ],
@@ -431,33 +431,54 @@ class _ReportsTabState extends State<ReportsTab> {
               t.doneAt.isBefore(_endDate.add(const Duration(days: 1)));
         }).toList();
 
-        // Calculate expenses by category
-        Map<String, double> expensesByCategory = {};
-        for (var transaction in filteredTransactions) {
-          // Check if this is an expense (has fromAccount but no toAccount)
-          final hasFromAccount = transaction.fromAccountId != null;
-          final hasToAccount = transaction.toAccountId != null;
-          
-          if (hasFromAccount && !hasToAccount) {
-            // This is an expense
-            String categoryName = 'Неизвестная категория';
+        // Prepare data based on chart type
+        Map<String, double> chartData = {};
+        
+        if (_selectedChartType == ChartType.pie) {
+          // Calculate expenses by category for pie chart
+          for (var transaction in filteredTransactions) {
+            final hasFromAccount = transaction.fromAccountId != null;
+            final hasToAccount = transaction.toAccountId != null;
             
-            if (categories.isNotEmpty) {
-              try {
-                final category = categories.firstWhere(
-                  (c) => c.id == transaction.categoryId,
-                );
-                categoryName = category.name;
-              } catch (e) {
-                // Category not found, use default name
-                categoryName = 'Неизвестная категория';
+            if (hasFromAccount && !hasToAccount) {
+              String categoryName = 'Неизвестная категория';
+              
+              if (categories.isNotEmpty) {
+                try {
+                  final category = categories.firstWhere(
+                    (c) => c.id == transaction.categoryId,
+                  );
+                  categoryName = category.name;
+                } catch (e) {
+                  categoryName = 'Неизвестная категория';
+                }
               }
+              
+              chartData[categoryName] =
+                  (chartData[categoryName] ?? 0) + transaction.amount;
             }
-            
-            expensesByCategory[categoryName] =
-                (expensesByCategory[categoryName] ?? 0) +
-                    transaction.amount;
           }
+        } else {
+          // Calculate expenses by day for bar and line charts
+          for (var transaction in filteredTransactions) {
+            final hasFromAccount = transaction.fromAccountId != null;
+            final hasToAccount = transaction.toAccountId != null;
+            
+            if (hasFromAccount && !hasToAccount) {
+              final dateKey = DateFormat('dd.MM.yyyy').format(transaction.doneAt);
+              chartData[dateKey] =
+                  (chartData[dateKey] ?? 0) + transaction.amount;
+            }
+          }
+          
+          // Sort by date
+          final sortedEntries = chartData.entries.toList()
+            ..sort((a, b) {
+              final dateA = DateFormat('dd.MM.yyyy').parse(a.key);
+              final dateB = DateFormat('dd.MM.yyyy').parse(b.key);
+              return dateA.compareTo(dateB);
+            });
+          chartData = Map.fromEntries(sortedEntries);
         }
 
         return SingleChildScrollView(
@@ -504,11 +525,11 @@ class _ReportsTabState extends State<ReportsTab> {
                       ),
                       const SizedBox(height: 16),
                       // Simple text-based chart representation
-                      if (expensesByCategory.isEmpty)
+                      if (chartData.isEmpty)
                         const Text('Нет данных для отображения')
                       else
-                        ...expensesByCategory.entries.map((entry) {
-                          final total = expensesByCategory.values
+                        ...chartData.entries.map((entry) {
+                          final total = chartData.values
                               .fold<double>(0, (sum, val) => sum + val);
                           final percentage = (entry.value / total * 100);
                           return Padding(
@@ -560,12 +581,12 @@ class _ReportsTabState extends State<ReportsTab> {
 
   String _getChartTitle() {
     switch (_selectedChartType) {
-      case ChartType.bar:
-        return 'Столбчатая диаграмма расходов по категориям';
       case ChartType.pie:
-        return 'Круговая диаграмма распределения расходов';
+        return 'Круговая диаграмма расходов по категориям';
+      case ChartType.bar:
+        return 'Столбчатая диаграмма расходов по дням';
       case ChartType.line:
-        return 'Линейная диаграмма динамики расходов';
+        return 'Линейная диаграмма расходов по дням';
       case ChartType.none:
         return 'Диаграмма';
     }
