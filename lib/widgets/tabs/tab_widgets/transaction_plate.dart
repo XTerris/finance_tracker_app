@@ -1,9 +1,11 @@
 import 'package:finance_tracker_app/providers/transaction_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../../../models/transaction.dart';
 import '../../../providers/account_provider.dart';
+import '../../../providers/category_provider.dart';
 import '../../../providers/goal_provider.dart';
 import 'edit_transaction_bottom_sheet.dart';
 
@@ -12,27 +14,292 @@ class TransactionPlate extends StatelessWidget {
   final EdgeInsetsGeometry? margin;
   const TransactionPlate({super.key, required this.transaction, this.margin});
 
+  String _getAccountName(AccountProvider accountProvider, int? accountId) {
+    if (accountId == null) return '—';
+    
+    final account = accountProvider.accounts.firstWhere(
+      (acc) => acc.id == accountId,
+      orElse: () => throw Exception('Account not found'),
+    );
+    return account.name;
+  }
+
+  String _getCategoryName(CategoryProvider categoryProvider, int categoryId) {
+    final category = categoryProvider.categories.firstWhere(
+      (cat) => cat.id == categoryId,
+      orElse: () => throw Exception('Category not found'),
+    );
+    return category.name;
+  }
+
+  Widget _buildTransactionTypeIndicator() {
+    // Determine transaction type based on accounts
+    final bool hasFrom = transaction.fromAccountId != null;
+    final bool hasTo = transaction.toAccountId != null;
+
+    if (hasFrom && hasTo) {
+      // Transfer between accounts
+      return Container(
+        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: Colors.blue.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.swap_horiz, size: 16, color: Colors.blue),
+            SizedBox(width: 4),
+            Text(
+              'Перевод',
+              style: TextStyle(
+                color: Colors.blue,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      );
+    } else if (hasFrom && !hasTo) {
+      // Expense
+      return Container(
+        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: Colors.red.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.arrow_downward, size: 16, color: Colors.red),
+            SizedBox(width: 4),
+            Text(
+              'Списание',
+              style: TextStyle(
+                color: Colors.red,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      );
+    } else if (!hasFrom && hasTo) {
+      // Income
+      return Container(
+        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: Colors.green.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.arrow_upward, size: 16, color: Colors.green),
+            SizedBox(width: 4),
+            Text(
+              'Зачисление',
+              style: TextStyle(
+                color: Colors.green,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return SizedBox.shrink();
+  }
+
   @override
   Widget build(BuildContext context) {
+    final accountProvider = context.watch<AccountProvider>();
+    final categoryProvider = context.watch<CategoryProvider>();
+
+    String fromAccountName = '—';
+    String toAccountName = '—';
+    String categoryName = 'Не указана';
+
+    try {
+      if (transaction.fromAccountId != null) {
+        fromAccountName = _getAccountName(accountProvider, transaction.fromAccountId);
+      }
+      if (transaction.toAccountId != null) {
+        toAccountName = _getAccountName(accountProvider, transaction.toAccountId);
+      }
+      categoryName = _getCategoryName(categoryProvider, transaction.categoryId);
+    } catch (e) {
+      // Silently handle errors - accounts or categories might have been deleted
+    }
+
+    final dateFormat = DateFormat('dd.MM.yyyy HH:mm');
+
     return Container(
       width: double.infinity,
       padding: EdgeInsets.all(16),
       margin: margin ?? EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.secondaryContainer,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            transaction.title,
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          // Header row with title and type indicator
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Text(
+                  transaction.title,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              SizedBox(width: 8),
+              _buildTransactionTypeIndicator(),
+            ],
           ),
-          Text('Сумма: ${transaction.amount}', style: TextStyle(fontSize: 14)),
+          SizedBox(height: 12),
+
+          // Amount with styled display
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface.withOpacity(0.5),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.attach_money,
+                  size: 20,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                SizedBox(width: 4),
+                Text(
+                  '${transaction.amount.toStringAsFixed(2)} ₽',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(height: 12),
+
+          // Category
+          Row(
+            children: [
+              Icon(Icons.category, size: 16, color: Colors.grey[600]),
+              SizedBox(width: 8),
+              Text(
+                'Категория: ',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey[600],
+                ),
+              ),
+              Text(
+                categoryName,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
           SizedBox(height: 8),
-          Text('Счет списания: ${transaction.fromAccountId}'),
-          Text('Счет зачисления: ${transaction.toAccountId}'),
+
+          // From Account (if exists)
+          if (transaction.fromAccountId != null) ...[
+            Row(
+              children: [
+                Icon(Icons.call_made, size: 16, color: Colors.grey[600]),
+                SizedBox(width: 8),
+                Text(
+                  'Счет списания: ',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[600],
+                  ),
+                ),
+                Flexible(
+                  child: Text(
+                    fromAccountName,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 8),
+          ],
+
+          // To Account (if exists)
+          if (transaction.toAccountId != null) ...[
+            Row(
+              children: [
+                Icon(Icons.call_received, size: 16, color: Colors.grey[600]),
+                SizedBox(width: 8),
+                Text(
+                  'Счет зачисления: ',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[600],
+                  ),
+                ),
+                Flexible(
+                  child: Text(
+                    toAccountName,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 8),
+          ],
+
+          // Date and time
+          Row(
+            children: [
+              Icon(Icons.access_time, size: 16, color: Colors.grey[600]),
+              SizedBox(width: 8),
+              Text(
+                dateFormat.format(transaction.doneAt),
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.grey[600],
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 12),
+
+          // Action buttons
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
@@ -52,9 +319,13 @@ class TransactionPlate extends StatelessWidget {
                         ),
                   );
                 },
-                icon: Icon(Icons.edit),
+                icon: Icon(Icons.edit, size: 18),
                 label: Text("Изменить"),
+                style: TextButton.styleFrom(
+                  foregroundColor: Theme.of(context).colorScheme.primary,
+                ),
               ),
+              SizedBox(width: 8),
               TextButton.icon(
                 onPressed: () async {
                   final messenger = ScaffoldMessenger.of(context);
@@ -82,8 +353,11 @@ class TransactionPlate extends StatelessWidget {
                     );
                   }
                 },
-                icon: Icon(Icons.delete),
+                icon: Icon(Icons.delete, size: 18),
                 label: Text("Удалить"),
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.red,
+                ),
               ),
             ],
           ),
