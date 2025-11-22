@@ -283,89 +283,95 @@ class TransactionPlate extends StatelessWidget {
             SizedBox(height: 8),
           ],
 
-          // Date and time
+          // Date and time and Action buttons row
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Icon(Icons.access_time, size: 16, color: Colors.grey[600]),
-              SizedBox(width: 8),
-              Text(
-                dateFormat.format(transaction.doneAt),
-                style: TextStyle(
-                  fontSize: 13,
-                  color: Colors.grey[600],
-                ),
+              // Date and time on the left
+              Row(
+                children: [
+                  Icon(Icons.access_time, size: 16, color: Colors.grey[600]),
+                  SizedBox(width: 8),
+                  Text(
+                    dateFormat.format(transaction.doneAt),
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
-          SizedBox(height: 12),
-
-          // Action buttons
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              Container(
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primaryContainer,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: IconButton(
-                  onPressed: () {
-                    showModalBottomSheet(
-                      context: context,
-                      isScrollControlled: true,
-                      shape: const RoundedRectangleBorder(
-                        borderRadius: BorderRadius.vertical(
-                          top: Radius.circular(20),
-                        ),
-                      ),
-                      builder:
-                          (context) => EditTransactionBottomSheet(
-                            transaction: transaction,
+              
+              // Action buttons on the right
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primaryContainer,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: IconButton(
+                      onPressed: () {
+                        showModalBottomSheet(
+                          context: context,
+                          isScrollControlled: true,
+                          shape: const RoundedRectangleBorder(
+                            borderRadius: BorderRadius.vertical(
+                              top: Radius.circular(20),
+                            ),
                           ),
-                    );
-                  },
-                  icon: Icon(Icons.edit, size: 20),
-                  color: Theme.of(context).colorScheme.primary,
-                  tooltip: 'Изменить',
-                ),
-              ),
-              SizedBox(width: 8),
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.red.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: IconButton(
-                  onPressed: () async {
-                    final messenger = ScaffoldMessenger.of(context);
-                    final transactionProvider =
-                        context.read<TransactionProvider>();
-                    final accountProvider = context.read<AccountProvider>();
-                    final goalProvider = context.read<GoalProvider>();
+                          builder:
+                              (context) => EditTransactionBottomSheet(
+                                transaction: transaction,
+                              ),
+                        );
+                      },
+                      icon: Icon(Icons.edit, size: 20),
+                      color: Theme.of(context).colorScheme.primary,
+                      tooltip: 'Изменить',
+                    ),
+                  ),
+                  SizedBox(width: 8),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.red.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: IconButton(
+                      onPressed: () async {
+                        final messenger = ScaffoldMessenger.of(context);
+                        final transactionProvider =
+                            context.read<TransactionProvider>();
+                        final accountProvider = context.read<AccountProvider>();
+                        final goalProvider = context.read<GoalProvider>();
 
-                    try {
-                      await transactionProvider.removeTransaction(transaction.id);
-                      await accountProvider.update();
-                      await goalProvider.update();
+                        try {
+                          await transactionProvider.removeTransaction(transaction.id);
+                          await accountProvider.update();
+                          await goalProvider.update();
 
-                      messenger.showSnackBar(
-                        const SnackBar(content: Text('Операция удалена')),
-                      );
-                    } catch (e) {
-                      messenger.showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            e.toString().replaceAll('Exception: ', ''),
-                          ),
-                          backgroundColor: Colors.red,
-                        ),
-                      );
-                    }
-                  },
-                  icon: Icon(Icons.delete, size: 20),
-                  color: Colors.red,
-                  tooltip: 'Удалить',
-                ),
+                          messenger.showSnackBar(
+                            const SnackBar(content: Text('Операция удалена')),
+                          );
+                        } catch (e) {
+                          messenger.showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                e.toString().replaceAll('Exception: ', ''),
+                              ),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      },
+                      icon: Icon(Icons.delete, size: 20),
+                      color: Colors.red,
+                      tooltip: 'Удалить',
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
