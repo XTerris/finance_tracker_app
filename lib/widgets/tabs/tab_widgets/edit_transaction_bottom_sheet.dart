@@ -20,6 +20,7 @@ class _EditTransactionBottomSheetState
     extends State<EditTransactionBottomSheet> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _titleController;
+  late final TextEditingController _amountController;
 
   int? _selectedCategoryId;
   bool _isLoading = false;
@@ -28,12 +29,16 @@ class _EditTransactionBottomSheetState
   void initState() {
     super.initState();
     _titleController = TextEditingController(text: widget.transaction.title);
+    _amountController = TextEditingController(
+      text: widget.transaction.amount.toString(),
+    );
     _selectedCategoryId = widget.transaction.categoryId;
   }
 
   @override
   void dispose() {
     _titleController.dispose();
+    _amountController.dispose();
     super.dispose();
   }
 
@@ -127,10 +132,13 @@ class _EditTransactionBottomSheetState
       final accountProvider = context.read<AccountProvider>();
       final goalProvider = context.read<GoalProvider>();
 
+      final amount = double.parse(_amountController.text.trim());
+
       await transactionProvider.updateTransaction(
         id: widget.transaction.id,
         title: _titleController.text.trim(),
         categoryId: _selectedCategoryId,
+        amount: amount,
       );
 
       // Update account balances and goals after updating transaction
@@ -229,6 +237,31 @@ class _EditTransactionBottomSheetState
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
                     return 'Пожалуйста, введите название';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+
+              // Amount field
+              TextFormField(
+                controller: _amountController,
+                decoration: const InputDecoration(
+                  labelText: 'Сумма',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.onetwothree),
+                  suffixText: '₽',
+                ),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Пожалуйста, введите сумму';
+                  }
+                  final amount = double.tryParse(value.trim());
+                  if (amount == null || amount <= 0) {
+                    return 'Пожалуйста, введите корректную сумму';
                   }
                   return null;
                 },

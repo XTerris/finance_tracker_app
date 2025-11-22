@@ -142,7 +142,7 @@ class _EditAccountBottomSheetState extends State<EditAccountBottomSheet> {
                 decoration: const InputDecoration(
                   labelText: 'Баланс',
                   border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.attach_money),
+                  prefixIcon: Icon(Icons.onetwothree),
                   suffixText: '₽',
                 ),
                 keyboardType: const TextInputType.numberWithOptions(

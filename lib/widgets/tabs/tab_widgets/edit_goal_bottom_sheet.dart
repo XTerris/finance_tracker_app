@@ -134,7 +134,7 @@ class _EditGoalBottomSheetState extends State<EditGoalBottomSheet> {
                 decoration: const InputDecoration(
                   labelText: 'Целевая сумма',
                   border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.flag),
+                  prefixIcon: Icon(Icons.onetwothree),
                   suffixText: '₽',
                 ),
                 keyboardType: const TextInputType.numberWithOptions(

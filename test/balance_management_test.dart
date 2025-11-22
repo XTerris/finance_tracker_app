@@ -332,4 +332,316 @@ void main() {
       expect(updatedAccount.balance, 420.0);
     });
   });
+
+  group('Account Deletion Prevention', () {
+    test('Cannot delete account with linked transactions', () async {
+      await DatabaseService.init();
+      final dbService = DatabaseService();
+
+      final category = await dbService.createCategory('Food');
+      final account = await dbService.createAccount('Checking', 1000.0);
+
+      // Create a transaction linked to the account
+      await dbService.createTransaction(
+        title: 'Groceries',
+        amount: 50.0,
+        categoryId: category.id,
+        fromAccountId: account.id,
+      );
+
+      // Try to delete the account - should fail
+      expect(
+        () => dbService.deleteAccount(account.id),
+        throwsA(isA<Exception>()),
+      );
+
+      // Verify account still exists
+      final accounts = await dbService.getAllAccounts();
+      expect(accounts.any((a) => a.id == account.id), true);
+    });
+
+    test('Can delete account without linked transactions', () async {
+      await DatabaseService.init();
+      final dbService = DatabaseService();
+
+      final account = await dbService.createAccount('Checking', 1000.0);
+
+      // Delete the account - should succeed
+      await dbService.deleteAccount(account.id);
+
+      // Verify account is deleted
+      final accounts = await dbService.getAllAccounts();
+      expect(accounts.any((a) => a.id == account.id), false);
+    });
+
+    test('Cannot delete account linked as fromAccount', () async {
+      await DatabaseService.init();
+      final dbService = DatabaseService();
+
+      final category = await dbService.createCategory('Food');
+      final account = await dbService.createAccount('Checking', 1000.0);
+
+      await dbService.createTransaction(
+        title: 'Expense',
+        amount: 50.0,
+        categoryId: category.id,
+        fromAccountId: account.id,
+      );
+
+      expect(
+        () => dbService.deleteAccount(account.id),
+        throwsA(isA<Exception>()),
+      );
+    });
+
+    test('Cannot delete account linked as toAccount', () async {
+      await DatabaseService.init();
+      final dbService = DatabaseService();
+
+      final category = await dbService.createCategory('Salary');
+      final account = await dbService.createAccount('Checking', 1000.0);
+
+      await dbService.createTransaction(
+        title: 'Income',
+        amount: 500.0,
+        categoryId: category.id,
+        toAccountId: account.id,
+      );
+
+      expect(
+        () => dbService.deleteAccount(account.id),
+        throwsA(isA<Exception>()),
+      );
+    });
+  });
+
+  group('Transaction Amount Update', () {
+    test('Can update transaction amount when balance stays positive', () async {
+      await DatabaseService.init();
+      final dbService = DatabaseService();
+
+      final category = await dbService.createCategory('Food');
+      final account = await dbService.createAccount('Checking', 1000.0);
+
+      // Create a transaction with 50
+      final transaction = await dbService.createTransaction(
+        title: 'Groceries',
+        amount: 50.0,
+        categoryId: category.id,
+        fromAccountId: account.id,
+      );
+
+      // Balance should be 950
+      var accounts = await dbService.getAllAccounts();
+      var updatedAccount = accounts.firstWhere((a) => a.id == account.id);
+      expect(updatedAccount.balance, 950.0);
+
+      // Update amount to 100
+      await dbService.updateTransaction(
+        id: transaction.id,
+        amount: 100.0,
+      );
+
+      // Balance should now be 900
+      accounts = await dbService.getAllAccounts();
+      updatedAccount = accounts.firstWhere((a) => a.id == account.id);
+      expect(updatedAccount.balance, 900.0);
+
+      // Verify transaction amount was updated
+      final updatedTransaction = await dbService.getTransaction(transaction.id);
+      expect(updatedTransaction.amount, 100.0);
+    });
+
+    test('Cannot update transaction amount if it causes negative balance',
+        () async {
+      await DatabaseService.init();
+      final dbService = DatabaseService();
+
+      final category = await dbService.createCategory('Food');
+      final account = await dbService.createAccount('Checking', 100.0);
+
+      // Create a transaction with 50
+      final transaction = await dbService.createTransaction(
+        title: 'Groceries',
+        amount: 50.0,
+        categoryId: category.id,
+        fromAccountId: account.id,
+      );
+
+      // Balance should be 50
+      var accounts = await dbService.getAllAccounts();
+      var updatedAccount = accounts.firstWhere((a) => a.id == account.id);
+      expect(updatedAccount.balance, 50.0);
+
+      // Try to update amount to 150 - should fail
+      expect(
+        () => dbService.updateTransaction(
+          id: transaction.id,
+          amount: 150.0,
+        ),
+        throwsA(isA<Exception>()),
+      );
+
+      // Balance should remain 50
+      accounts = await dbService.getAllAccounts();
+      updatedAccount = accounts.firstWhere((a) => a.id == account.id);
+      expect(updatedAccount.balance, 50.0);
+
+      // Verify transaction amount unchanged
+      final unchangedTransaction = await dbService.getTransaction(transaction.id);
+      expect(unchangedTransaction.amount, 50.0);
+    });
+
+    test('Cannot update amount if it causes historical negative balance',
+        () async {
+      await DatabaseService.init();
+      final dbService = DatabaseService();
+
+      final category = await dbService.createCategory('Food');
+      final account = await dbService.createAccount('Checking', 1000.0);
+
+      final now = DateTime.now();
+
+      // Create first transaction at past (expense of 50)
+      final transaction1 = await dbService.createTransaction(
+        title: 'Past Expense',
+        amount: 50.0,
+        categoryId: category.id,
+        fromAccountId: account.id,
+        doneAt: now.subtract(const Duration(days: 2)),
+      );
+
+      // Create second transaction at present (expense of 900)
+      await dbService.createTransaction(
+        title: 'Current Expense',
+        amount: 900.0,
+        categoryId: category.id,
+        fromAccountId: account.id,
+        doneAt: now,
+      );
+
+      // Balance should be 50
+      var accounts = await dbService.getAllAccounts();
+      var updatedAccount = accounts.firstWhere((a) => a.id == account.id);
+      expect(updatedAccount.balance, 50.0);
+
+      // Try to update past transaction amount to 200
+      // This would make balance after past transaction 800,
+      // but then the current transaction would make it -100
+      expect(
+        () => dbService.updateTransaction(
+          id: transaction1.id,
+          amount: 200.0,
+        ),
+        throwsA(isA<Exception>()),
+      );
+
+      // Balance should remain 50
+      accounts = await dbService.getAllAccounts();
+      updatedAccount = accounts.firstWhere((a) => a.id == account.id);
+      expect(updatedAccount.balance, 50.0);
+    });
+
+    test('Can update amount to smaller value', () async {
+      await DatabaseService.init();
+      final dbService = DatabaseService();
+
+      final category = await dbService.createCategory('Food');
+      final account = await dbService.createAccount('Checking', 1000.0);
+
+      // Create a transaction with 100
+      final transaction = await dbService.createTransaction(
+        title: 'Groceries',
+        amount: 100.0,
+        categoryId: category.id,
+        fromAccountId: account.id,
+      );
+
+      // Balance should be 900
+      var accounts = await dbService.getAllAccounts();
+      var updatedAccount = accounts.firstWhere((a) => a.id == account.id);
+      expect(updatedAccount.balance, 900.0);
+
+      // Update amount to 50 (smaller)
+      await dbService.updateTransaction(
+        id: transaction.id,
+        amount: 50.0,
+      );
+
+      // Balance should now be 950
+      accounts = await dbService.getAllAccounts();
+      updatedAccount = accounts.firstWhere((a) => a.id == account.id);
+      expect(updatedAccount.balance, 950.0);
+    });
+
+    test('Can update transaction amount for income', () async {
+      await DatabaseService.init();
+      final dbService = DatabaseService();
+
+      final category = await dbService.createCategory('Salary');
+      final account = await dbService.createAccount('Checking', 0.0);
+
+      // Create an income transaction with 1000
+      final transaction = await dbService.createTransaction(
+        title: 'Monthly Salary',
+        amount: 1000.0,
+        categoryId: category.id,
+        toAccountId: account.id,
+      );
+
+      // Balance should be 1000
+      var accounts = await dbService.getAllAccounts();
+      var updatedAccount = accounts.firstWhere((a) => a.id == account.id);
+      expect(updatedAccount.balance, 1000.0);
+
+      // Update amount to 1500
+      await dbService.updateTransaction(
+        id: transaction.id,
+        amount: 1500.0,
+      );
+
+      // Balance should now be 1500
+      accounts = await dbService.getAllAccounts();
+      updatedAccount = accounts.firstWhere((a) => a.id == account.id);
+      expect(updatedAccount.balance, 1500.0);
+    });
+
+    test('Can update transfer amount', () async {
+      await DatabaseService.init();
+      final dbService = DatabaseService();
+
+      final category = await dbService.createCategory('Transfer');
+      final account1 = await dbService.createAccount('Checking', 1000.0);
+      final account2 = await dbService.createAccount('Savings', 500.0);
+
+      // Create a transfer with 200
+      final transaction = await dbService.createTransaction(
+        title: 'Save money',
+        amount: 200.0,
+        categoryId: category.id,
+        fromAccountId: account1.id,
+        toAccountId: account2.id,
+      );
+
+      // Balances should be 800 and 700
+      var accounts = await dbService.getAllAccounts();
+      var updatedAccount1 = accounts.firstWhere((a) => a.id == account1.id);
+      var updatedAccount2 = accounts.firstWhere((a) => a.id == account2.id);
+      expect(updatedAccount1.balance, 800.0);
+      expect(updatedAccount2.balance, 700.0);
+
+      // Update amount to 300
+      await dbService.updateTransaction(
+        id: transaction.id,
+        amount: 300.0,
+      );
+
+      // Balances should now be 700 and 800
+      accounts = await dbService.getAllAccounts();
+      updatedAccount1 = accounts.firstWhere((a) => a.id == account1.id);
+      updatedAccount2 = accounts.firstWhere((a) => a.id == account2.id);
+      expect(updatedAccount1.balance, 700.0);
+      expect(updatedAccount2.balance, 800.0);
+    });
+  });
 }

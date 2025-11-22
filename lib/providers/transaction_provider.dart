@@ -48,9 +48,10 @@ class TransactionProvider extends ChangeNotifier {
     required int id,
     String? title,
     int? categoryId,
+    double? amount,
   }) async {
     final updatedTransaction = await serviceLocator.databaseService
-        .updateTransaction(id: id, title: title, categoryId: categoryId);
+        .updateTransaction(id: id, title: title, categoryId: categoryId, amount: amount);
 
     // Update the local transaction list
     final index = _transactions.indexWhere((t) => t.id == id);

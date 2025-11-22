@@ -127,7 +127,7 @@ class _AddAccountBottomSheetState extends State<AddAccountBottomSheet> {
                 decoration: const InputDecoration(
                   labelText: 'Начальный баланс',
                   border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.attach_money),
+                  prefixIcon: Icon(Icons.onetwothree),
                 ),
                 keyboardType: const TextInputType.numberWithOptions(
                   decimal: true,

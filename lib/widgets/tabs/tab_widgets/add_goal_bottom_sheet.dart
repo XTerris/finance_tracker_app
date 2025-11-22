@@ -148,7 +148,7 @@ class _AddGoalBottomSheetState extends State<AddGoalBottomSheet> {
                 decoration: const InputDecoration(
                   labelText: 'Целевая сумма',
                   border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.savings),
+                  prefixIcon: Icon(Icons.onetwothree),
                   suffixText: '₽',
                 ),
                 keyboardType: const TextInputType.numberWithOptions(

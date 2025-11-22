@@ -291,7 +291,7 @@ class _AddTransactionBottomSheetState extends State<AddTransactionBottomSheet> {
                 decoration: const InputDecoration(
                   labelText: 'Сумма',
                   border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.attach_money),
+                  prefixIcon: Icon(Icons.onetwothree),
                 ),
                 keyboardType: const TextInputType.numberWithOptions(
                   decimal: true,
