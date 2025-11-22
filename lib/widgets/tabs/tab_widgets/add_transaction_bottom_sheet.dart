@@ -189,7 +189,7 @@ class _AddTransactionBottomSheetState extends State<AddTransactionBottomSheet> {
       if (mounted) {
         navigator.pop();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Транзакция успешно добавлена')),
+          const SnackBar(content: Text('Операция успешно добавлена')),
         );
       }
     } catch (e) {
@@ -255,7 +255,7 @@ class _AddTransactionBottomSheetState extends State<AddTransactionBottomSheet> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Добавить транзакцию',
+                    'Добавить операцию',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -357,7 +357,7 @@ class _AddTransactionBottomSheetState extends State<AddTransactionBottomSheet> {
               DropdownButtonFormField<TransactionType>(
                 value: _transactionType,
                 decoration: const InputDecoration(
-                  labelText: 'Тип транзакции',
+                  labelText: 'Тип операции',
                   border: OutlineInputBorder(),
                   prefixIcon: Icon(Icons.swap_vert),
                 ),
@@ -524,7 +524,7 @@ class _AddTransactionBottomSheetState extends State<AddTransactionBottomSheet> {
                           width: 20,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                        : const Text('Добавить транзакцию'),
+                        : const Text('Добавить операцию'),
               ),
               const SizedBox(height: 16),
             ],

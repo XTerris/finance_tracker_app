@@ -54,7 +54,7 @@ class _HistoryTabState extends State<HistoryTab> {
                   child: Padding(
                     padding: EdgeInsets.all(32),
                     child: Text(
-                      'Нет транзакций',
+                      'Нет операций',
                       style: TextStyle(fontSize: 16, color: Colors.grey),
                     ),
                   ),
@@ -72,7 +72,7 @@ class _HistoryTabState extends State<HistoryTab> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showAddTransactionBottomSheet,
-        tooltip: 'Добавить транзакцию',
+        tooltip: 'Добавить операцию',
         child: Icon(Icons.add),
       ),
     );

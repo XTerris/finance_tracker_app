@@ -140,7 +140,7 @@ class _EditTransactionBottomSheetState
       if (mounted) {
         navigator.pop();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Транзакция успешно обновлена')),
+          const SnackBar(content: Text('Операция успешно обновлена')),
         );
       }
     } catch (e) {
@@ -205,7 +205,7 @@ class _EditTransactionBottomSheetState
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Изменить транзакцию',
+                    'Изменить операцию',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
