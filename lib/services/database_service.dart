@@ -311,8 +311,6 @@ class DatabaseService {
 
       // If amount is being updated, we need to adjust account balances
       if (amount != null && amount != oldAmount) {
-        final amountDiff = amount - oldAmount;
-
         // Reverse old balance changes first
         if (fromAccountId != null) {
           await _updateAccountBalance(txn, fromAccountId, oldAmount);

@@ -130,14 +130,7 @@ class _EditTransactionBottomSheetState
       final accountProvider = context.read<AccountProvider>();
       final goalProvider = context.read<GoalProvider>();
 
-      final amount = double.tryParse(_amountController.text.trim());
-      if (amount == null || amount <= 0) {
-        _showSnackBar('Пожалуйста, введите корректную сумму', isError: true);
-        setState(() {
-          _isLoading = false;
-        });
-        return;
-      }
+      final amount = double.parse(_amountController.text.trim());
 
       await transactionProvider.updateTransaction(
         id: widget.transaction.id,
