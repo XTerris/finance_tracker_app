@@ -178,16 +178,7 @@ class DatabaseService {
     );
 
     if (transactions.isNotEmpty) {
-      // Get account name for better error message
-      final accountQuery = await _db.query(
-        _accountTable,
-        where: 'id = ?',
-        whereArgs: [id],
-      );
-      final accountName = accountQuery.isNotEmpty 
-          ? accountQuery[0]['name'] as String 
-          : 'Unknown Account';
-      
+      final accountName = await _getAccountName(_db, id);
       throw Exception(
           'Невозможно удалить счёт "$accountName", так как к нему привязаны операции. Удалите сначала все операции этого счёта.');
     }
@@ -269,16 +260,7 @@ class DatabaseService {
       for (final accountId in accountsToValidate) {
         final isValid = await _validateAccountBalanceHistory(txn, accountId);
         if (!isValid) {
-          // Get account name for better error message
-          final accountQuery = await txn.query(
-            _accountTable,
-            where: 'id = ?',
-            whereArgs: [accountId],
-          );
-          final accountName = accountQuery.isNotEmpty 
-              ? accountQuery[0]['name'] as String 
-              : 'Unknown Account';
-          
+          final accountName = await _getAccountName(txn, accountId);
           throw Exception(
               'Transaction would cause account "$accountName" balance to become negative at some point in history. Transaction rejected.');
         }
@@ -355,16 +337,7 @@ class DatabaseService {
         for (final accountId in accountsToValidate) {
           final isValid = await _validateAccountBalanceHistory(txn, accountId);
           if (!isValid) {
-            // Get account name for better error message
-            final accountQuery = await txn.query(
-              _accountTable,
-              where: 'id = ?',
-              whereArgs: [accountId],
-            );
-            final accountName = accountQuery.isNotEmpty 
-                ? accountQuery[0]['name'] as String 
-                : 'Unknown Account';
-            
+            final accountName = await _getAccountName(txn, accountId);
             throw Exception(
                 'Изменение суммы операции приведёт к отрицательному балансу счёта "$accountName" в какой-то момент времени. Изменение отклонено.');
           }
@@ -440,16 +413,7 @@ class DatabaseService {
       for (final accountId in accountsToValidate) {
         final isValid = await _validateAccountBalanceHistory(txn, accountId);
         if (!isValid) {
-          // Get account name for better error message
-          final accountQuery = await txn.query(
-            _accountTable,
-            where: 'id = ?',
-            whereArgs: [accountId],
-          );
-          final accountName = accountQuery.isNotEmpty 
-              ? accountQuery[0]['name'] as String 
-              : 'Unknown Account';
-          
+          final accountName = await _getAccountName(txn, accountId);
           throw Exception(
               'Deleting this transaction would cause account "$accountName" balance to become negative at some point in history. Deletion rejected.');
         }
@@ -465,6 +429,18 @@ class DatabaseService {
       SET balance = balance + ?
       WHERE id = ?
     ''', [amountChange, accountId]);
+  }
+
+  /// Helper method to get account name, used for error messages
+  Future<String> _getAccountName(DatabaseExecutor executor, int accountId) async {
+    final accountQuery = await executor.query(
+      _accountTable,
+      where: 'id = ?',
+      whereArgs: [accountId],
+    );
+    return accountQuery.isNotEmpty 
+        ? accountQuery[0]['name'] as String 
+        : 'Unknown Account';
   }
 
   // Helper method to validate that account balance never goes negative in history
