@@ -25,25 +25,9 @@ void main() {
     await DatabaseService.init();
     final dbService = DatabaseService();
 
-    // Verify default user is created
-    final user = await dbService.getDefaultUser();
-    expect(user.name, 'Default User');
-    expect(user.email, 'user@local.app');
-  });
-
-  test('Default user is recreated if deleted', () async {
-    await DatabaseService.init();
-    final dbService = DatabaseService();
-
-    // Get initial user
-    final user1 = await dbService.getDefaultUser();
-    expect(user1.name, 'Default User');
-
-    // Even if user is somehow deleted (e.g., direct DB manipulation),
-    // getDefaultUser will recreate it
-    final user2 = await dbService.getDefaultUser();
-    expect(user2.name, 'Default User');
-    expect(user2.email, 'user@local.app');
+    // Verify database is initialized and accessible
+    final categories = await dbService.getAllCategories();
+    expect(categories, isA<List>());
   });
 
   test('Can create and retrieve categories', () async {

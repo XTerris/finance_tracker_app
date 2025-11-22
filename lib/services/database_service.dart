@@ -1,7 +1,6 @@
 import 'package:path/path.dart';
 import 'dart:io' show Platform;
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
-import '../models/user.dart';
 import '../models/transaction.dart' as models;
 import '../models/category.dart';
 import '../models/account.dart';
@@ -12,7 +11,6 @@ class DatabaseService {
   static const String _databaseName = 'finance_tracker.db';
   static const int _databaseVersion = 1;
 
-  static const String _userTable = 'users';
   static const String _categoryTable = 'categories';
   static const String _accountTable = 'accounts';
   static const String _transactionTable = 'transactions';
@@ -41,21 +39,9 @@ class DatabaseService {
       version: _databaseVersion,
       onCreate: _onCreate,
     );
-
-    // Create default user if none exists
-    await _createDefaultUserIfNeeded();
   }
 
   static Future<void> _onCreate(Database db, int version) async {
-    // Users table
-    await db.execute('''
-      CREATE TABLE $_userTable (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        email TEXT NOT NULL
-      )
-    ''');
-
     // Categories table
     await db.execute('''
       CREATE TABLE $_categoryTable (
@@ -102,54 +88,11 @@ class DatabaseService {
     ''');
   }
 
-  static Future<void> _createDefaultUserIfNeeded() async {
-    try {
-      final users = await _instance.getAllUsers();
-      if (users.isEmpty) {
-        await _instance.createUser('Default User', 'user@local.app');
-      }
-    } catch (e, stack) {
-      print('Error initializing default user: $e');
-      print(stack);
-      // Rethrow to prevent app from starting with corrupted database
-      rethrow;
-    }
-  }
-
   Database get _db {
     if (_database == null) {
       throw Exception('Database not initialized. Call init() first.');
     }
     return _database!;
-  }
-
-  // User operations
-  Future<List<User>> getAllUsers() async {
-    final List<Map<String, dynamic>> maps = await _db.query(_userTable);
-    return List.generate(maps.length, (i) {
-      return User(
-        id: maps[i]['id'],
-        name: maps[i]['name'],
-        email: maps[i]['email'],
-      );
-    });
-  }
-
-  Future<User> getDefaultUser() async {
-    final users = await getAllUsers();
-    if (users.isEmpty) {
-      // If no users exist, create default user to ensure app remains usable
-      return await createUser('Default User', 'user@local.app');
-    }
-    return users.first;
-  }
-
-  Future<User> createUser(String name, String email) async {
-    final id = await _db.insert(_userTable, {
-      'name': name,
-      'email': email,
-    }, conflictAlgorithm: ConflictAlgorithm.replace);
-    return User(id: id, name: name, email: email);
   }
 
   // Category operations
