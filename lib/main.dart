@@ -2,7 +2,6 @@ import 'package:finance_tracker_app/service_locator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
-import 'providers/user_provider.dart';
 import 'providers/category_provider.dart';
 import 'providers/transaction_provider.dart';
 import 'providers/account_provider.dart';
@@ -17,9 +16,6 @@ void main() async {
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider<UserProvider>(
-          create: (context) => UserProvider()..init(),
-        ),
         ChangeNotifierProvider<TransactionProvider>(
           create: (context) => TransactionProvider()..init(),
         ),
@@ -55,17 +51,7 @@ class App extends StatelessWidget {
       ],
       supportedLocales: const [Locale('en', 'US'), Locale('ru', 'RU')],
       scrollBehavior: NoThumbScrollBehavior().copyWith(scrollbars: false),
-      home: Consumer<UserProvider>(
-        builder: (context, userProvider, child) {
-          if (!userProvider.isReady) {
-            return const Scaffold(
-              body: Center(child: CircularProgressIndicator()),
-            );
-          } else {
-            return const HomePage();
-          }
-        },
-      ),
+      home: const HomePage(),
     );
   }
 }

@@ -13,7 +13,6 @@ This is a complete personal finance management application that runs entirely of
 - 🎯 **Financial Goals**: Set and track savings goals for your accounts
 - 📊 **Reports & Analytics**: View spending patterns and financial summaries
 - 💾 **Local Storage**: All data stored securely in local SQLite database
-- 🔒 **No Authentication Required**: Direct access with automatic default user creation
 
 ## Technical Stack
 
@@ -26,7 +25,7 @@ This is a complete personal finance management application that runs entirely of
 
 The app follows a clean architecture pattern:
 
-- **Models**: Data classes for User, Transaction, Category, Account, and Goal
+- **Models**: Data classes for Transaction, Category, Account, and Goal
 - **Services**: DatabaseService handles all SQL operations
 - **Providers**: State management for each entity type
 - **Widgets**: Reusable UI components and tab-based navigation
@@ -34,7 +33,6 @@ The app follows a clean architecture pattern:
 ## Database Schema
 
 SQLite database with the following tables:
-- `users` - User information
 - `categories` - Transaction categories
 - `accounts` - Financial accounts
 - `transactions` - Income and expense records
@@ -45,7 +43,6 @@ SQLite database with the following tables:
 1. Clone the repository
 2. Run `flutter pub get` to install dependencies
 3. Run `flutter run` to launch the app
-4. A default user will be created automatically on first launch
 
 ## Development
 

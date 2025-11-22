@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../models/transaction.dart';
 import '../../models/account.dart';
-import '../../providers/user_provider.dart';
 import '../../providers/transaction_provider.dart';
 import '../../providers/account_provider.dart';
 import 'tab_widgets/transaction_plate.dart';
@@ -77,6 +76,21 @@ class _DashboardTabState extends State<DashboardTab> {
     return accounts.fold(0.0, (sum, account) => sum + account.balance);
   }
 
+  // Get time-based greeting
+  String _getGreeting() {
+    final hour = DateTime.now().hour;
+    
+    if (hour >= 6 && hour < 12) {
+      return 'Доброе утро!';
+    } else if (hour >= 12 && hour < 18) {
+      return 'Добрый день!';
+    } else if (hour >= 18 && hour < 23) {
+      return 'Добрый вечер!';
+    } else {
+      return 'Доброй ночи!';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final currencyFormat = NumberFormat.currency(
@@ -97,15 +111,12 @@ class _DashboardTabState extends State<DashboardTab> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Expanded(
-                  child: Consumer<UserProvider>(
-                    builder:
-                        (context, userProvider, child) => Text(
-                          'Добрый день, ${userProvider.currentUser!.name}!',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                  child: Text(
+                    _getGreeting(),
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ],
