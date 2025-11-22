@@ -6,19 +6,9 @@ import '../../providers/transaction_provider.dart';
 import '../../providers/category_provider.dart';
 import '../../providers/account_provider.dart';
 
-enum ChartType {
-  none,
-  bar,
-  pie,
-  line,
-}
+enum ChartType { none, bar, pie, line }
 
-enum ReportView {
-  summary,
-  chartSelection,
-  chartView,
-  forecast,
-}
+enum ReportView { summary, chartSelection, chartView, forecast }
 
 class ReportsTab extends StatefulWidget {
   const ReportsTab({super.key});
@@ -54,10 +44,7 @@ class _ReportsTabState extends State<ReportsTab> {
       initialDateRange: DateTimeRange(start: _startDate, end: _endDate),
       locale: const Locale('ru', 'RU'),
       builder: (context, child) {
-        return Theme(
-          data: Theme.of(context),
-          child: child!,
-        );
+        return Theme(data: Theme.of(context), child: child!);
       },
     );
 
@@ -80,7 +67,7 @@ class _ReportsTabState extends State<ReportsTab> {
         // Determine transaction type based on account IDs
         final hasFromAccount = transaction.fromAccountId != null;
         final hasToAccount = transaction.toAccountId != null;
-        
+
         if (hasToAccount && !hasFromAccount) {
           // Income: money coming into an account
           totalIncome += transaction.amount;
@@ -103,9 +90,9 @@ class _ReportsTabState extends State<ReportsTab> {
     if (avgMonthlyExpense <= 0) {
       return 'Расходы отсутствуют, прогноз не требуется';
     }
-    
+
     final months = (totalBalance / avgMonthlyExpense).floor();
-    
+
     if (months == 0) {
       return 'Текущего баланса недостаточно для покрытия средних месячных расходов';
     } else if (months == 1) {
@@ -146,20 +133,15 @@ class _ReportsTabState extends State<ReportsTab> {
 
   Widget _buildSummaryView() {
     return Consumer3<TransactionProvider, CategoryProvider, AccountProvider>(
-      builder: (context, transactionProvider, categoryProvider,
-          accountProvider, child) {
+      builder: (
+        context,
+        transactionProvider,
+        categoryProvider,
+        accountProvider,
+        child,
+      ) {
         final transactions = transactionProvider.transactions;
         final stats = _calculateStatistics(transactions);
-        final accounts = accountProvider.accounts;
-        final totalBalance = accounts.fold<double>(
-          0,
-          (sum, account) => sum + account.balance,
-        );
-
-        // Calculate average monthly expense
-        final daysDiff = _endDate.difference(_startDate).inDays;
-        final monthsDiff = daysDiff / 30.0;
-        final avgMonthlyExpense = monthsDiff > 0 ? stats['expense']! / monthsDiff : 0.0;
 
         return SingleChildScrollView(
           child: Padding(
@@ -173,7 +155,7 @@ class _ReportsTabState extends State<ReportsTab> {
                   style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Period selection
                 GestureDetector(
                   onTap: _selectDateRange,
@@ -396,10 +378,7 @@ class _ReportsTabState extends State<ReportsTab> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  Text(
-                    description,
-                    style: const TextStyle(fontSize: 14),
-                  ),
+                  Text(description, style: const TextStyle(fontSize: 14)),
                 ],
               ),
             ),
@@ -415,7 +394,7 @@ class _ReportsTabState extends State<ReportsTab> {
     if (totalDays <= 14) {
       return 1; // Daily grouping
     }
-    
+
     // Try different grouping periods to find one that gives 5-14 bars
     for (int groupDays in [2, 3, 4, 5, 6, 7, 10, 14, 21, 28, 30]) {
       final numBars = (totalDays / groupDays).ceil();
@@ -423,7 +402,7 @@ class _ReportsTabState extends State<ReportsTab> {
         return groupDays;
       }
     }
-    
+
     // If no ideal grouping found, calculate custom period
     return (totalDays / 10).ceil(); // Aim for ~10 bars
   }
@@ -435,24 +414,28 @@ class _ReportsTabState extends State<ReportsTab> {
         final categories = categoryProvider.categories;
 
         // Filter transactions by date range
-        final filteredTransactions = transactions.where((t) {
-          return t.doneAt.isAfter(_startDate.subtract(const Duration(days: 1))) &&
-              t.doneAt.isBefore(_endDate.add(const Duration(days: 1)));
-        }).toList();
+        final filteredTransactions =
+            transactions.where((t) {
+              return t.doneAt.isAfter(
+                    _startDate.subtract(const Duration(days: 1)),
+                  ) &&
+                  t.doneAt.isBefore(_endDate.add(const Duration(days: 1)));
+            }).toList();
 
         // Prepare data based on chart type
         Map<String, double> chartData = {};
-        Map<String, String> chartDataRanges = {}; // Store period ranges for tooltips
-        
+        Map<String, String> chartDataRanges =
+            {}; // Store period ranges for tooltips
+
         if (_selectedChartType == ChartType.pie) {
           // Calculate expenses by category for pie chart
           for (var transaction in filteredTransactions) {
             final hasFromAccount = transaction.fromAccountId != null;
             final hasToAccount = transaction.toAccountId != null;
-            
+
             if (hasFromAccount && !hasToAccount) {
               String categoryName = 'Неизвестная категория';
-              
+
               if (categories.isNotEmpty) {
                 try {
                   final category = categories.firstWhere(
@@ -463,7 +446,7 @@ class _ReportsTabState extends State<ReportsTab> {
                   categoryName = 'Неизвестная категория';
                 }
               }
-              
+
               chartData[categoryName] =
                   (chartData[categoryName] ?? 0) + transaction.amount;
             }
@@ -472,62 +455,71 @@ class _ReportsTabState extends State<ReportsTab> {
           // Calculate expenses by periods for bar and line charts
           // First, create a map with all days in the period (with 0 values)
           final Map<String, double> allDaysMap = {};
-          DateTime currentDate = DateTime(_startDate.year, _startDate.month, _startDate.day);
+          DateTime currentDate = DateTime(
+            _startDate.year,
+            _startDate.month,
+            _startDate.day,
+          );
           final endDate = DateTime(_endDate.year, _endDate.month, _endDate.day);
-          
-          while (currentDate.isBefore(endDate) || currentDate.isAtSameMomentAs(endDate)) {
+
+          while (currentDate.isBefore(endDate) ||
+              currentDate.isAtSameMomentAs(endDate)) {
             final dateKey = DateFormat('dd.MM.yyyy').format(currentDate);
             allDaysMap[dateKey] = 0.0;
             currentDate = currentDate.add(const Duration(days: 1));
           }
-          
+
           // Then, fill in actual transaction amounts
           for (var transaction in filteredTransactions) {
             final hasFromAccount = transaction.fromAccountId != null;
             final hasToAccount = transaction.toAccountId != null;
-            
+
             if (hasFromAccount && !hasToAccount) {
-              final dateKey = DateFormat('dd.MM.yyyy').format(transaction.doneAt);
+              final dateKey = DateFormat(
+                'dd.MM.yyyy',
+              ).format(transaction.doneAt);
               if (allDaysMap.containsKey(dateKey)) {
                 allDaysMap[dateKey] = allDaysMap[dateKey]! + transaction.amount;
               }
             }
           }
-          
+
           // Sort by date
-          final sortedEntries = allDaysMap.entries.toList()
-            ..sort((a, b) {
-              final dateA = DateFormat('dd.MM.yyyy').parse(a.key);
-              final dateB = DateFormat('dd.MM.yyyy').parse(b.key);
-              return dateA.compareTo(dateB);
-            });
-          
+          final sortedEntries =
+              allDaysMap.entries.toList()..sort((a, b) {
+                final dateA = DateFormat('dd.MM.yyyy').parse(a.key);
+                final dateB = DateFormat('dd.MM.yyyy').parse(b.key);
+                return dateA.compareTo(dateB);
+              });
+
           // Calculate optimal grouping for better readability
           final totalDays = sortedEntries.length;
           final groupDays = _calculateOptimalGroupDays(totalDays);
-          
+
           if (groupDays == 1) {
             // Daily grouping - no need to group
             chartData = Map.fromEntries(sortedEntries);
             // For daily data, range is just the single day
             for (var entry in sortedEntries) {
               final date = DateFormat('dd.MM.yyyy').parse(entry.key);
-              chartDataRanges[entry.key] = DateFormat('dd.MM.yyyy').format(date);
+              chartDataRanges[entry.key] = DateFormat(
+                'dd.MM.yyyy',
+              ).format(date);
             }
           } else {
             // Group by periods
             final Map<String, double> groupedData = {};
             final Map<String, DateTime> periodStarts = {};
             final Map<String, DateTime> periodEnds = {};
-            
+
             DateTime? periodStart;
             String? periodKey;
             int daysInCurrentPeriod = 0;
-            
+
             for (int i = 0; i < sortedEntries.length; i++) {
               final entry = sortedEntries[i];
               final date = DateFormat('dd.MM.yyyy').parse(entry.key);
-              
+
               if (periodStart == null || daysInCurrentPeriod >= groupDays) {
                 // Start a new period
                 periodStart = date;
@@ -536,22 +528,23 @@ class _ReportsTabState extends State<ReportsTab> {
                 daysInCurrentPeriod = 0;
                 groupedData[periodKey] = 0.0;
               }
-              
+
               // Add to current period
               groupedData[periodKey!] = groupedData[periodKey]! + entry.value;
               periodEnds[periodKey] = date;
               daysInCurrentPeriod++;
             }
-            
+
             chartData = groupedData;
-            
+
             // Create range strings for tooltips
             periodStarts.forEach((key, start) {
               final end = periodEnds[key]!;
               if (start == end) {
                 chartDataRanges[key] = DateFormat('dd.MM.yyyy').format(start);
               } else {
-                chartDataRanges[key] = '${DateFormat('dd.MM.yyyy').format(start)} - ${DateFormat('dd.MM.yyyy').format(end)}';
+                chartDataRanges[key] =
+                    '${DateFormat('dd.MM.yyyy').format(start)} - ${DateFormat('dd.MM.yyyy').format(end)}';
               }
             });
           }
@@ -576,8 +569,10 @@ class _ReportsTabState extends State<ReportsTab> {
                     ),
                     const Text(
                       'Диаграмма',
-                      style:
-                          TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ],
                 ),
@@ -647,7 +642,10 @@ class _ReportsTabState extends State<ReportsTab> {
     }
   }
 
-  Widget _buildLineChart(Map<String, double> chartData, Map<String, String> chartDataRanges) {
+  Widget _buildLineChart(
+    Map<String, double> chartData,
+    Map<String, String> chartDataRanges,
+  ) {
     if (chartData.isEmpty) {
       return const Center(
         child: Padding(
@@ -661,21 +659,21 @@ class _ReportsTabState extends State<ReportsTab> {
     final List<FlSpot> spots = [];
     final List<String> labels = [];
     final List<double> amounts = [];
-    
+
     chartData.forEach((dateStr, amount) {
       labels.add(dateStr);
       amounts.add(amount);
     });
-    
+
     // Create spots with index as X and amount as Y
     for (int i = 0; i < labels.length; i++) {
       spots.add(FlSpot(i.toDouble(), amounts[i]));
     }
-    
+
     // Find min and max for better scaling
     final maxY = amounts.reduce((a, b) => a > b ? a : b);
     final minY = amounts.reduce((a, b) => a < b ? a : b);
-    
+
     return Column(
       children: [
         SizedBox(
@@ -722,7 +720,7 @@ class _ReportsTabState extends State<ReportsTab> {
                       return Padding(
                         padding: const EdgeInsets.only(top: 8.0),
                         child: Transform.rotate(
-                          angle: -0.5,  // Rotate labels to prevent overlap
+                          angle: -0.5, // Rotate labels to prevent overlap
                           child: Text(
                             label,
                             style: const TextStyle(
@@ -780,7 +778,9 @@ class _ReportsTabState extends State<ReportsTab> {
                   ),
                   belowBarData: BarAreaData(
                     show: true,
-                    color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.primary.withOpacity(0.1),
                   ),
                 ),
               ],
@@ -818,7 +818,10 @@ class _ReportsTabState extends State<ReportsTab> {
           runSpacing: 8,
           children: [
             _buildStatChip('Всего периодов', labels.length.toString()),
-            _buildStatChip('Средние расходы', _formatCurrency(amounts.reduce((a, b) => a + b) / amounts.length)),
+            _buildStatChip(
+              'Средние расходы',
+              _formatCurrency(amounts.reduce((a, b) => a + b) / amounts.length),
+            ),
             _buildStatChip('Максимум', _formatCurrency(maxY)),
             _buildStatChip('Минимум', _formatCurrency(minY)),
           ],
@@ -829,15 +832,15 @@ class _ReportsTabState extends State<ReportsTab> {
 
   Widget _buildStatChip(String label, String value) {
     return Chip(
-      label: Text(
-        '$label: $value',
-        style: const TextStyle(fontSize: 12),
-      ),
+      label: Text('$label: $value', style: const TextStyle(fontSize: 12)),
       backgroundColor: Theme.of(context).colorScheme.primaryContainer,
     );
   }
 
-  Widget _buildBarChart(Map<String, double> chartData, Map<String, String> chartDataRanges) {
+  Widget _buildBarChart(
+    Map<String, double> chartData,
+    Map<String, String> chartDataRanges,
+  ) {
     if (chartData.isEmpty) {
       return const Center(
         child: Padding(
@@ -851,12 +854,12 @@ class _ReportsTabState extends State<ReportsTab> {
     final List<BarChartGroupData> barGroups = [];
     final List<String> labels = [];
     final List<double> amounts = [];
-    
+
     chartData.forEach((label, amount) {
       labels.add(label);
       amounts.add(amount);
     });
-    
+
     // Create bar groups with index as X
     for (int i = 0; i < labels.length; i++) {
       barGroups.add(
@@ -876,11 +879,11 @@ class _ReportsTabState extends State<ReportsTab> {
         ),
       );
     }
-    
+
     // Find max for better scaling
     final maxY = amounts.reduce((a, b) => a > b ? a : b);
     final minY = amounts.reduce((a, b) => a < b ? a : b);
-    
+
     return Column(
       children: [
         SizedBox(
@@ -923,7 +926,7 @@ class _ReportsTabState extends State<ReportsTab> {
                       return Padding(
                         padding: const EdgeInsets.only(top: 8.0),
                         child: Transform.rotate(
-                          angle: -0.5,  // Rotate labels to prevent overlap
+                          angle: -0.5, // Rotate labels to prevent overlap
                           child: Text(
                             label,
                             style: const TextStyle(
@@ -989,7 +992,10 @@ class _ReportsTabState extends State<ReportsTab> {
           runSpacing: 8,
           children: [
             _buildStatChip('Всего периодов', labels.length.toString()),
-            _buildStatChip('Средние расходы', _formatCurrency(amounts.reduce((a, b) => a + b) / amounts.length)),
+            _buildStatChip(
+              'Средние расходы',
+              _formatCurrency(amounts.reduce((a, b) => a + b) / amounts.length),
+            ),
             _buildStatChip('Максимум', _formatCurrency(maxY)),
             _buildStatChip('Минимум', _formatCurrency(minY)),
           ],
@@ -1010,7 +1016,7 @@ class _ReportsTabState extends State<ReportsTab> {
 
     // Calculate total for percentages
     final total = chartData.values.fold<double>(0, (sum, val) => sum + val);
-    
+
     // Create pie chart sections
     final List<PieChartSectionData> sections = [];
     final List<Color> colors = [
@@ -1025,7 +1031,7 @@ class _ReportsTabState extends State<ReportsTab> {
       Colors.cyan,
       Colors.indigo,
     ];
-    
+
     int colorIndex = 0;
     chartData.forEach((category, amount) {
       final percentage = (amount / total * 100);
@@ -1044,7 +1050,7 @@ class _ReportsTabState extends State<ReportsTab> {
       );
       colorIndex++;
     });
-    
+
     return Column(
       children: [
         SizedBox(
@@ -1069,50 +1075,55 @@ class _ReportsTabState extends State<ReportsTab> {
           spacing: 16,
           runSpacing: 12,
           alignment: WrapAlignment.center,
-          children: chartData.entries.toList().asMap().entries.map((entry) {
-            final index = entry.key;
-            final mapEntry = entry.value;
-            final color = colors[index % colors.length];
-            final percentage = (mapEntry.value / total * 100);
-            
-            return Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 16,
-                    height: 16,
-                    decoration: BoxDecoration(
-                      color: color,
-                      shape: BoxShape.circle,
-                    ),
+          children:
+              chartData.entries.toList().asMap().entries.map((entry) {
+                final index = entry.key;
+                final mapEntry = entry.value;
+                final color = colors[index % colors.length];
+                final percentage = (mapEntry.value / total * 100);
+
+                return Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
                   ),
-                  const SizedBox(width: 8),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  decoration: BoxDecoration(
+                    color:
+                        Theme.of(context).colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(
-                        mapEntry.key,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
+                      Container(
+                        width: 16,
+                        height: 16,
+                        decoration: BoxDecoration(
+                          color: color,
+                          shape: BoxShape.circle,
                         ),
                       ),
-                      Text(
-                        '${_formatCurrency(mapEntry.value)} (${percentage.toStringAsFixed(1)}%)',
-                        style: const TextStyle(fontSize: 11),
+                      const SizedBox(width: 8),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            mapEntry.key,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            '${_formatCurrency(mapEntry.value)} (${percentage.toStringAsFixed(1)}%)',
+                            style: const TextStyle(fontSize: 11),
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                ],
-              ),
-            );
-          }).toList(),
+                );
+              }).toList(),
         ),
       ],
     );
@@ -1154,8 +1165,10 @@ class _ReportsTabState extends State<ReportsTab> {
                     ),
                     const Text(
                       'Прогноз',
-                      style:
-                          TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ],
                 ),
