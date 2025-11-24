@@ -10,6 +10,8 @@ import 'tab_widgets/add_transaction_bottom_sheet.dart';
 
 enum TransactionType { income, expense, transfer }
 
+typedef FilterCallback = void Function(Set<int> categories, Set<TransactionType> types);
+
 class HistoryTab extends StatefulWidget {
   const HistoryTab({super.key});
 
@@ -269,7 +271,7 @@ class _HistoryTabState extends State<HistoryTab> {
 class _FilterDialog extends StatefulWidget {
   final Set<int> selectedCategories;
   final Set<TransactionType> selectedTypes;
-  final Function(Set<int>, Set<TransactionType>) onApply;
+  final FilterCallback onApply;
 
   const _FilterDialog({
     required this.selectedCategories,
