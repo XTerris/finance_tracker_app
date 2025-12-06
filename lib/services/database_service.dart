@@ -172,7 +172,8 @@ class DatabaseService {
     if (transactions.isNotEmpty) {
       final accountName = await _getAccountName(_db, id);
       throw Exception(
-          'Невозможно удалить счёт "$accountName", так как к нему привязаны операции. Удалите сначала все операции этого счёта.');
+        'Невозможно удалить счёт "$accountName", так как к нему привязаны операции. Удалите сначала все операции этого счёта.',
+      );
     }
 
     await _db.delete(_accountTable, where: 'id = ?', whereArgs: [id]);
@@ -249,7 +250,8 @@ class DatabaseService {
         if (!isValid) {
           final accountName = await _getAccountName(txn, accountId);
           throw Exception(
-              'Transaction would cause account "$accountName" balance to become negative at some point in history. Transaction rejected.');
+            'Transaction would cause account "$accountName" balance to become negative at some point in history. Transaction rejected.',
+          );
         }
       }
 
@@ -317,7 +319,8 @@ class DatabaseService {
           if (!isValid) {
             final accountName = await _getAccountName(txn, accountId);
             throw Exception(
-                'Изменение суммы операции приведёт к отрицательному балансу счёта "$accountName" в какой-то момент времени. Изменение отклонено.');
+              'Изменение суммы операции приведёт к отрицательному балансу счёта "$accountName" в какой-то момент времени. Изменение отклонено.',
+            );
           }
         }
       }
@@ -387,34 +390,46 @@ class DatabaseService {
         if (!isValid) {
           final accountName = await _getAccountName(txn, accountId);
           throw Exception(
-              'Deleting this transaction would cause account "$accountName" balance to become negative at some point in history. Deletion rejected.');
+            'Deleting this transaction would cause account "$accountName" balance to become negative at some point in history. Deletion rejected.',
+          );
         }
       }
     });
   }
 
   Future<void> _updateAccountBalance(
-      DatabaseExecutor txn, int accountId, double amountChange) async {
-    await txn.rawUpdate('''
+    DatabaseExecutor txn,
+    int accountId,
+    double amountChange,
+  ) async {
+    await txn.rawUpdate(
+      '''
       UPDATE $_accountTable
       SET balance = balance + ?
       WHERE id = ?
-    ''', [amountChange, accountId]);
+    ''',
+      [amountChange, accountId],
+    );
   }
 
-  Future<String> _getAccountName(DatabaseExecutor executor, int accountId) async {
+  Future<String> _getAccountName(
+    DatabaseExecutor executor,
+    int accountId,
+  ) async {
     final accountQuery = await executor.query(
       _accountTable,
       where: 'id = ?',
       whereArgs: [accountId],
     );
-    return accountQuery.isNotEmpty 
-        ? accountQuery[0]['name'] as String 
+    return accountQuery.isNotEmpty
+        ? accountQuery[0]['name'] as String
         : 'Unknown Account';
   }
 
   Future<bool> _validateAccountBalanceHistory(
-      DatabaseExecutor txn, int accountId) async {
+    DatabaseExecutor txn,
+    int accountId,
+  ) async {
     final accountQuery = await txn.query(
       _accountTable,
       where: 'id = ?',
@@ -435,7 +450,7 @@ class DatabaseService {
     );
 
     double runningBalance = currentBalance;
-    
+
     for (final txn in transactions.reversed) {
       final amount = txn['amount'] as double;
       final fromAccountId = txn['from_account_id'] as int?;
@@ -450,7 +465,7 @@ class DatabaseService {
     }
 
     double balance = runningBalance;
-    
+
     if (balance < 0) {
       return false;
     }

@@ -184,18 +184,25 @@ class AccountPlate extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.account_balance_wallet, size: 20, color: Theme.of(context).colorScheme.primary),
+              Icon(
+                Icons.account_balance_wallet,
+                size: 20,
+                color: Theme.of(context).colorScheme.primary,
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   account.name,
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 12),
-          
+
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
@@ -226,15 +233,23 @@ class AccountPlate extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surface.withOpacity(0.3),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.surface.withOpacity(0.3),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.outline.withOpacity(0.3),
                         ),
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.flag_outlined, size: 20, color: Colors.grey[600]),
+                          Icon(
+                            Icons.flag_outlined,
+                            size: 20,
+                            color: Colors.grey[600],
+                          ),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(
@@ -276,7 +291,9 @@ class AccountPlate extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surface.withOpacity(0.3),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.surface.withOpacity(0.3),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Column(
@@ -287,7 +304,11 @@ class AccountPlate extends StatelessWidget {
                           children: [
                             Row(
                               children: [
-                                Icon(Icons.flag, size: 20, color: Theme.of(context).colorScheme.primary),
+                                Icon(
+                                  Icons.flag,
+                                  size: 20,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
                                 const SizedBox(width: 8),
                                 const Text(
                                   'Цель',
@@ -311,7 +332,11 @@ class AccountPlate extends StatelessWidget {
                                 child: const Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Icon(Icons.check_circle, size: 14, color: Colors.white),
+                                    Icon(
+                                      Icons.check_circle,
+                                      size: 14,
+                                      color: Colors.white,
+                                    ),
                                     SizedBox(width: 4),
                                     Text(
                                       'Достигнута',
@@ -329,7 +354,11 @@ class AccountPlate extends StatelessWidget {
                         const SizedBox(height: 12),
                         Row(
                           children: [
-                            Icon(Icons.savings, size: 16, color: Colors.grey[600]),
+                            Icon(
+                              Icons.savings,
+                              size: 16,
+                              color: Colors.grey[600],
+                            ),
                             const SizedBox(width: 8),
                             Text(
                               'Целевая сумма: ',
@@ -350,13 +379,21 @@ class AccountPlate extends StatelessWidget {
                         const SizedBox(height: 6),
                         Row(
                           children: [
-                            Icon(Icons.calendar_today, size: 16, color: daysLeft < 0 ? Colors.red : Colors.grey[600]),
+                            Icon(
+                              Icons.calendar_today,
+                              size: 16,
+                              color:
+                                  daysLeft < 0 ? Colors.red : Colors.grey[600],
+                            ),
                             const SizedBox(width: 8),
                             Text(
                               'Дедлайн: ',
                               style: TextStyle(
                                 fontSize: 13,
-                                color: daysLeft < 0 ? Colors.red : Colors.grey[600],
+                                color:
+                                    daysLeft < 0
+                                        ? Colors.red
+                                        : Colors.grey[600],
                               ),
                             ),
                             Text(
@@ -418,7 +455,10 @@ class AccountPlate extends StatelessWidget {
                           children: [
                             Container(
                               decoration: BoxDecoration(
-                                color: Theme.of(context).colorScheme.primaryContainer,
+                                color:
+                                    Theme.of(
+                                      context,
+                                    ).colorScheme.primaryContainer,
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: IconButton(
@@ -432,7 +472,8 @@ class AccountPlate extends StatelessWidget {
                                       ),
                                     ),
                                     builder:
-                                        (context) => EditGoalBottomSheet(goal: goal),
+                                        (context) =>
+                                            EditGoalBottomSheet(goal: goal),
                                   );
                                 },
                                 icon: const Icon(Icons.edit, size: 20),
@@ -443,9 +484,10 @@ class AccountPlate extends StatelessWidget {
                             const SizedBox(width: 8),
                             Container(
                               decoration: BoxDecoration(
-                                color: goal.isCompleted 
-                                    ? Colors.orange.withOpacity(0.1)
-                                    : Colors.green.withOpacity(0.1),
+                                color:
+                                    goal.isCompleted
+                                        ? Colors.orange.withOpacity(0.1)
+                                        : Colors.green.withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: IconButton(
@@ -461,8 +503,14 @@ class AccountPlate extends StatelessWidget {
                                       : Icons.check_circle,
                                   size: 20,
                                 ),
-                                color: goal.isCompleted ? Colors.orange : Colors.green,
-                                tooltip: goal.isCompleted ? 'Отметить как незавершённую' : 'Отметить как завершённую',
+                                color:
+                                    goal.isCompleted
+                                        ? Colors.orange
+                                        : Colors.green,
+                                tooltip:
+                                    goal.isCompleted
+                                        ? 'Отметить как незавершённую'
+                                        : 'Отметить как завершённую',
                               ),
                             ),
                             const SizedBox(width: 8),

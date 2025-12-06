@@ -70,7 +70,7 @@ class _DashboardTabState extends State<DashboardTab> {
 
   String _getGreeting() {
     final hour = DateTime.now().hour;
-    
+
     if (hour >= 6 && hour < 12) {
       return 'Доброе утро!';
     } else if (hour >= 12 && hour < 18) {
@@ -104,10 +104,7 @@ class _DashboardTabState extends State<DashboardTab> {
                 Expanded(
                   child: Text(
                     _getGreeting(),
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                   ),
                 ),
               ],

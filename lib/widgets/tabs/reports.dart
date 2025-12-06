@@ -410,8 +410,7 @@ class _ReportsTabState extends State<ReportsTab> {
             }).toList();
 
         Map<String, double> chartData = {};
-        Map<String, String> chartDataRanges =
-            {};
+        Map<String, String> chartDataRanges = {};
 
         if (_selectedChartType == ChartType.pie) {
           for (var transaction in filteredTransactions) {
@@ -1020,8 +1019,7 @@ class _ReportsTabState extends State<ReportsTab> {
               centerSpaceRadius: 40,
               pieTouchData: PieTouchData(
                 enabled: true,
-                touchCallback: (FlTouchEvent event, pieTouchResponse) {
-                },
+                touchCallback: (FlTouchEvent event, pieTouchResponse) {},
               ),
             ),
           ),

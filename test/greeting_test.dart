@@ -1,4 +1,3 @@
-
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -6,21 +5,33 @@ void main() {
     test('Returns correct greeting for morning hours (6-11)', () {
       for (int hour = 6; hour < 12; hour++) {
         final greeting = getGreetingForHour(hour);
-        expect(greeting, 'Доброе утро!', reason: 'Hour $hour should return morning greeting');
+        expect(
+          greeting,
+          'Доброе утро!',
+          reason: 'Hour $hour should return morning greeting',
+        );
       }
     });
 
     test('Returns correct greeting for afternoon hours (12-17)', () {
       for (int hour = 12; hour < 18; hour++) {
         final greeting = getGreetingForHour(hour);
-        expect(greeting, 'Добрый день!', reason: 'Hour $hour should return afternoon greeting');
+        expect(
+          greeting,
+          'Добрый день!',
+          reason: 'Hour $hour should return afternoon greeting',
+        );
       }
     });
 
     test('Returns correct greeting for evening hours (18-22)', () {
       for (int hour = 18; hour < 23; hour++) {
         final greeting = getGreetingForHour(hour);
-        expect(greeting, 'Добрый вечер!', reason: 'Hour $hour should return evening greeting');
+        expect(
+          greeting,
+          'Добрый вечер!',
+          reason: 'Hour $hour should return evening greeting',
+        );
       }
     });
 
@@ -28,7 +39,11 @@ void main() {
       final nightHours = [23, 0, 1, 2, 3, 4, 5];
       for (int hour in nightHours) {
         final greeting = getGreetingForHour(hour);
-        expect(greeting, 'Доброй ночи!', reason: 'Hour $hour should return night greeting');
+        expect(
+          greeting,
+          'Доброй ночи!',
+          reason: 'Hour $hour should return night greeting',
+        );
       }
     });
   });
