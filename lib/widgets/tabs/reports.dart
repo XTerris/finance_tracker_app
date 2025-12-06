@@ -124,6 +124,19 @@ class _ReportsTabState extends State<ReportsTab> {
     );
   }
 
+  String _getChartTypeName() {
+    switch (_selectedChartType) {
+      case ChartType.pie:
+        return 'pie';
+      case ChartType.bar:
+        return 'bar';
+      case ChartType.line:
+        return 'line';
+      case ChartType.none:
+        return 'unknown';
+    }
+  }
+
   void _exportChartImage() async {
     try {
       // Validate that a chart type is selected
@@ -132,15 +145,13 @@ class _ReportsTabState extends State<ReportsTab> {
       }
 
       // Find the RenderRepaintBoundary
-      RenderRepaintBoundary? boundary = _chartKey.currentContext
-          ?.findRenderObject() as RenderRepaintBoundary?;
-      
-      if (boundary == null) {
+      final renderObject = _chartKey.currentContext?.findRenderObject();
+      if (renderObject is! RenderRepaintBoundary) {
         throw Exception('Не удалось найти диаграмму для экспорта');
       }
 
       // Capture the image with a higher pixel ratio for better quality
-      ui.Image image = await boundary.toImage(pixelRatio: 3.0);
+      ui.Image image = await renderObject.toImage(pixelRatio: 3.0);
       
       // Convert to byte data
       var byteData = await image.toByteData(format: ui.ImageByteFormat.png);
@@ -163,11 +174,7 @@ class _ReportsTabState extends State<ReportsTab> {
       
       // Create filename with timestamp
       final timestamp = DateFormat('yyyy-MM-dd_HH-mm-ss').format(DateTime.now());
-      final chartTypeName = _selectedChartType == ChartType.pie
-          ? 'pie'
-          : _selectedChartType == ChartType.bar
-              ? 'bar'
-              : 'line';
+      final chartTypeName = _getChartTypeName();
       final fileName = 'chart_${chartTypeName}_$timestamp.jpg';
       final filePath = '${directory.path}/$fileName';
 
@@ -180,7 +187,7 @@ class _ReportsTabState extends State<ReportsTab> {
       // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Диаграмма сохранена: $filePath'),
+          content: Text('Диаграмма сохранена: $fileName'),
           duration: const Duration(seconds: 4),
           action: SnackBarAction(
             label: 'OK',
