@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:image/image.dart' as img;
 import 'dart:ui' as ui;
 import 'dart:io';
@@ -137,6 +139,66 @@ class _ReportsTabState extends State<ReportsTab> {
     }
   }
 
+  Future<String?> _getSaveDirectory() async {
+    if (kIsWeb) {
+      // Web platform - use browser download
+      return null;
+    }
+
+    if (Platform.isAndroid) {
+      // Request storage permission on Android
+      var status = await Permission.storage.status;
+      if (!status.isGranted) {
+        // For Android 13+ (API 33+), use photos permission
+        if (await Permission.photos.isGranted || 
+            await Permission.photos.request().isGranted) {
+          status = PermissionStatus.granted;
+        } else if (await Permission.storage.request().isGranted) {
+          status = PermissionStatus.granted;
+        }
+      }
+
+      if (!status.isGranted) {
+        throw Exception('Требуется разрешение на сохранение файлов');
+      }
+
+      // Get external storage directory for Android
+      final directory = await getExternalStorageDirectory();
+      if (directory == null) {
+        throw Exception('Не удалось получить доступ к хранилищу');
+      }
+
+      // Navigate to Pictures/Finance Tracker/
+      // Android external storage path: /storage/emulated/0/Android/data/package/files
+      // We need to go up and then to Pictures
+      final parts = directory.path.split('/');
+      final storageIndex = parts.indexOf('Android');
+      if (storageIndex > 0) {
+        final basePath = parts.sublist(0, storageIndex).join('/');
+        final picturesPath = '$basePath/Pictures/Finance Tracker';
+        
+        // Create the directory if it doesn't exist
+        final picturesDir = Directory(picturesPath);
+        if (!await picturesDir.exists()) {
+          await picturesDir.create(recursive: true);
+        }
+        
+        return picturesPath;
+      }
+      
+      // Fallback to external storage directory
+      return directory.path;
+    } else if (Platform.isIOS) {
+      // iOS - use app documents directory
+      final directory = await getApplicationDocumentsDirectory();
+      return directory.path;
+    } else {
+      // Other platforms (desktop)
+      final directory = await getApplicationDocumentsDirectory();
+      return directory.path;
+    }
+  }
+
   void _exportChartImage() async {
     try {
       // Validate that a chart type is selected
@@ -170,13 +232,16 @@ class _ReportsTabState extends State<ReportsTab> {
       var jpegBytes = img.encodeJpg(decodedImage, quality: 90);
 
       // Get directory to save the file
-      final directory = await getApplicationDocumentsDirectory();
+      final directoryPath = await _getSaveDirectory();
+      if (directoryPath == null) {
+        throw Exception('Не удалось определить путь для сохранения');
+      }
       
       // Create filename with timestamp
       final timestamp = DateFormat('yyyy-MM-dd_HH-mm-ss').format(DateTime.now());
       final chartTypeName = _getChartTypeName();
       final fileName = 'chart_${chartTypeName}_$timestamp.jpg';
-      final filePath = '${directory.path}/$fileName';
+      final filePath = '$directoryPath/$fileName';
 
       // Save the file
       final file = File(filePath);
@@ -184,10 +249,14 @@ class _ReportsTabState extends State<ReportsTab> {
 
       if (!mounted) return;
       
-      // Show success message
+      // Show success message with location hint
+      final locationHint = Platform.isAndroid 
+          ? 'Pictures/Finance Tracker/$fileName'
+          : fileName;
+      
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Диаграмма сохранена: $fileName'),
+          content: Text('Диаграмма сохранена: $locationHint'),
           duration: const Duration(seconds: 4),
         ),
       );
