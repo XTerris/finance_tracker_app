@@ -8,11 +8,11 @@ import '../../../providers/account_provider.dart';
 import '../../../providers/category_provider.dart';
 import '../../../providers/goal_provider.dart';
 import 'edit_transaction_bottom_sheet.dart';
+import 'plate_base.dart';
 
-class TransactionPlate extends StatelessWidget {
+class TransactionPlate extends PlateBase {
   final Transaction transaction;
-  final EdgeInsetsGeometry? margin;
-  const TransactionPlate({super.key, required this.transaction, this.margin});
+  const TransactionPlate({super.key, required this.transaction, super.margin});
 
   String _getAccountName(AccountProvider accountProvider, int? accountId) {
     if (accountId == null) return '—';
@@ -126,7 +126,7 @@ class TransactionPlate extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget buildContent(BuildContext context) {
     final accountProvider = context.watch<AccountProvider>();
     final categoryProvider = context.watch<CategoryProvider>();
 
@@ -152,215 +152,199 @@ class TransactionPlate extends StatelessWidget {
 
     final dateFormat = DateFormat('dd.MM.yyyy HH:mm');
 
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(16),
-      margin: margin ?? EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.secondaryContainer,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Text(
-                  transaction.title,
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Text(
+                transaction.title,
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
-              SizedBox(width: 8),
-              _buildTransactionTypeIndicator(),
-            ],
-          ),
-          SizedBox(height: 12),
-
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surface.withOpacity(0.5),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  _formatAmount(transaction.amount),
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                ),
-              ),
-
-              Flexible(
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.category, size: 16, color: Colors.grey[600]),
-                    SizedBox(width: 4),
-                    Flexible(
-                      child: Text(
-                        categoryName,
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 12),
-
-          if (transaction.fromAccountId != null) ...[
-            Row(
-              children: [
-                Icon(Icons.call_made, size: 16, color: Colors.grey[600]),
-                SizedBox(width: 8),
-                Text(
-                  'Счет списания: ',
-                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                ),
-                Flexible(
-                  child: Text(
-                    fromAccountName,
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
             ),
-            SizedBox(height: 8),
+            SizedBox(width: 8),
+            _buildTransactionTypeIndicator(),
           ],
+        ),
+        SizedBox(height: 12),
 
-          if (transaction.toAccountId != null) ...[
-            Row(
-              children: [
-                Icon(Icons.call_received, size: 16, color: Colors.grey[600]),
-                SizedBox(width: 8),
-                Text(
-                  'Счет зачисления: ',
-                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                ),
-                Flexible(
-                  child: Text(
-                    toAccountName,
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 8),
-          ],
-
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Row(
-                children: [
-                  Icon(Icons.access_time, size: 16, color: Colors.grey[600]),
-                  SizedBox(width: 8),
-                  Text(
-                    dateFormat.format(transaction.doneAt),
-                    style: TextStyle(fontSize: 13, color: Colors.grey[600]),
-                  ),
-                ],
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface.withOpacity(0.5),
+                borderRadius: BorderRadius.circular(8),
               ),
+              child: Text(
+                _formatAmount(transaction.amount),
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ),
+            ),
 
-              Row(
+            Flexible(
+              child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primaryContainer,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: IconButton(
-                      onPressed: () {
-                        showModalBottomSheet(
-                          context: context,
-                          isScrollControlled: true,
-                          shape: const RoundedRectangleBorder(
-                            borderRadius: BorderRadius.vertical(
-                              top: Radius.circular(20),
-                            ),
-                          ),
-                          builder:
-                              (context) => EditTransactionBottomSheet(
-                                transaction: transaction,
-                              ),
-                        );
-                      },
-                      icon: Icon(Icons.edit, size: 20),
-                      color: Theme.of(context).colorScheme.primary,
-                      tooltip: 'Изменить',
-                    ),
-                  ),
-                  SizedBox(width: 8),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.red.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: IconButton(
-                      onPressed: () async {
-                        final messenger = ScaffoldMessenger.of(context);
-                        final transactionProvider =
-                            context.read<TransactionProvider>();
-                        final accountProvider = context.read<AccountProvider>();
-                        final goalProvider = context.read<GoalProvider>();
-
-                        try {
-                          await transactionProvider.removeTransaction(
-                            transaction.id,
-                          );
-                          await accountProvider.update();
-                          await goalProvider.update();
-
-                          messenger.showSnackBar(
-                            const SnackBar(content: Text('Операция удалена')),
-                          );
-                        } catch (e) {
-                          messenger.showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                e.toString().replaceAll('Exception: ', ''),
-                              ),
-                              backgroundColor: Colors.red,
-                            ),
-                          );
-                        }
-                      },
-                      icon: Icon(Icons.delete, size: 20),
-                      color: Colors.red,
-                      tooltip: 'Удалить',
+                  Icon(Icons.category, size: 16, color: Colors.grey[600]),
+                  SizedBox(width: 4),
+                  Flexible(
+                    child: Text(
+                      categoryName,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],
               ),
+            ),
+          ],
+        ),
+        SizedBox(height: 12),
+
+        if (transaction.fromAccountId != null) ...[
+          Row(
+            children: [
+              Icon(Icons.call_made, size: 16, color: Colors.grey[600]),
+              SizedBox(width: 8),
+              Text(
+                'Счет списания: ',
+                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+              ),
+              Flexible(
+                child: Text(
+                  fromAccountName,
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
             ],
           ),
+          SizedBox(height: 8),
         ],
-      ),
+
+        if (transaction.toAccountId != null) ...[
+          Row(
+            children: [
+              Icon(Icons.call_received, size: 16, color: Colors.grey[600]),
+              SizedBox(width: 8),
+              Text(
+                'Счет зачисления: ',
+                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+              ),
+              Flexible(
+                child: Text(
+                  toAccountName,
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 8),
+        ],
+
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.access_time, size: 16, color: Colors.grey[600]),
+                SizedBox(width: 8),
+                Text(
+                  dateFormat.format(transaction.doneAt),
+                  style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                ),
+              ],
+            ),
+
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: IconButton(
+                    onPressed: () {
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        shape: const RoundedRectangleBorder(
+                          borderRadius: BorderRadius.vertical(
+                            top: Radius.circular(20),
+                          ),
+                        ),
+                        builder:
+                            (context) => EditTransactionBottomSheet(
+                              transaction: transaction,
+                            ),
+                      );
+                    },
+                    icon: Icon(Icons.edit, size: 20),
+                    color: Theme.of(context).colorScheme.primary,
+                    tooltip: 'Изменить',
+                  ),
+                ),
+                SizedBox(width: 8),
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: IconButton(
+                    onPressed: () async {
+                      final messenger = ScaffoldMessenger.of(context);
+                      final transactionProvider =
+                          context.read<TransactionProvider>();
+                      final accountProvider = context.read<AccountProvider>();
+                      final goalProvider = context.read<GoalProvider>();
+
+                      try {
+                        await transactionProvider.removeTransaction(
+                          transaction.id,
+                        );
+                        await accountProvider.update();
+                        await goalProvider.update();
+
+                        messenger.showSnackBar(
+                          const SnackBar(content: Text('Операция удалена')),
+                        );
+                      } catch (e) {
+                        messenger.showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              e.toString().replaceAll('Exception: ', ''),
+                            ),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
+                    },
+                    icon: Icon(Icons.delete, size: 20),
+                    color: Colors.red,
+                    tooltip: 'Удалить',
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ],
     );
   }
 }
