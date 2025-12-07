@@ -10,10 +10,12 @@ import '../../../providers/goal_provider.dart';
 import 'edit_transaction_bottom_sheet.dart';
 import 'plate_base.dart';
 
+// Карточка для отображения одной транзакции в списке
 class TransactionPlate extends PlateBase {
   final Transaction transaction;
   const TransactionPlate({super.key, required this.transaction, super.margin});
 
+  // Получение названия счета по ID
   String _getAccountName(AccountProvider accountProvider, int? accountId) {
     if (accountId == null) return '—';
 
@@ -23,10 +25,12 @@ class TransactionPlate extends PlateBase {
       );
       return account.name;
     } catch (e) {
+      // Ignore errors when fetching account or category names
       return '—';
     }
   }
 
+  // Получение названия категории по ID
   String _getCategoryName(CategoryProvider categoryProvider, int categoryId) {
     try {
       final category = categoryProvider.categories.firstWhere(
@@ -47,6 +51,7 @@ class TransactionPlate extends PlateBase {
     return formatter.format(amount);
   }
 
+  // Создание индикатора типа транзакции (расход/доход/перевод)
   Widget _buildTransactionTypeIndicator() {
     final bool hasFrom = transaction.fromAccountId != null;
     final bool hasTo = transaction.toAccountId != null;

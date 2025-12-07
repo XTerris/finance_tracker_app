@@ -10,6 +10,7 @@ import 'edit_account_bottom_sheet.dart';
 import 'edit_goal_bottom_sheet.dart';
 import 'plate_base.dart';
 
+// Карточка для отображения счета с целями и управлением
 class AccountPlate extends PlateBase {
   final Account account;
   const AccountPlate({super.key, required this.account, super.margin});
@@ -23,6 +24,7 @@ class AccountPlate extends PlateBase {
     return formatter.format(balance);
   }
 
+  // Показ диалога подтверждения удаления счета
   Future<void> _showDeleteConfirmation(BuildContext context) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -46,6 +48,7 @@ class AccountPlate extends PlateBase {
       },
     );
 
+    // Удаление счета если подтверждено
     if (confirmed == true && context.mounted) {
       try {
         await context.read<AccountProvider>().removeAccount(account.id);

@@ -7,6 +7,7 @@ import '../../../providers/account_provider.dart';
 import '../../../providers/goal_provider.dart';
 import 'add_bottom_sheet_base.dart';
 
+// Форма для редактирования существующей транзакции
 class EditTransactionBottomSheet extends AddBottomSheetBase {
   final Transaction transaction;
 
@@ -27,6 +28,7 @@ class _EditTransactionBottomSheetState
   @override
   void initState() {
     super.initState();
+    // Заполнение полей текущими значениями транзакции
     _titleController = TextEditingController(text: widget.transaction.title);
     _amountController = TextEditingController(
       text: widget.transaction.amount.toString(),
@@ -41,6 +43,7 @@ class _EditTransactionBottomSheetState
     super.dispose();
   }
 
+  // Создание новой категории через диалог
   Future<void> _createNewCategory(BuildContext context) async {
     final categoryNameController = TextEditingController();
     final categoryProvider = context.read<CategoryProvider>();

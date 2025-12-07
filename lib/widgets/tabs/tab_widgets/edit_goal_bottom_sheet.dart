@@ -5,6 +5,7 @@ import '../../../models/goal.dart';
 import '../../../providers/goal_provider.dart';
 import 'add_bottom_sheet_base.dart';
 
+// Форма для редактирования существующей финансовой цели
 class EditGoalBottomSheet extends AddBottomSheetBase {
   final Goal goal;
 
@@ -22,6 +23,7 @@ class _EditGoalBottomSheetState
   @override
   void initState() {
     super.initState();
+    // Заполнение полей текущими значениями цели
     _targetAmountController = TextEditingController(
       text: widget.goal.targetAmount.toStringAsFixed(2),
     );
@@ -34,6 +36,7 @@ class _EditGoalBottomSheetState
     super.dispose();
   }
 
+  // Выбор нового срока достижения цели
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
