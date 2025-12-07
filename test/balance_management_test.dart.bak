@@ -44,18 +44,18 @@ void main() {
       final dbService = DatabaseService();
 
       final category = await dbService.createCategory('Salary');
-      final account = await dbService.createAccount(createAccount('Checking', Money.rub(1000.0)), Money.rub(1000.0));
+      final account = await dbService.createAccount(createAccount('Checking', 1000.0), Money.rub(1000.0));
 
       await dbService.createTransaction(
         title: 'Monthly Salary',
-        amount: Money.rub(3000.0),
+        amount: 3000.0,
         categoryId: category.id,
         toAccountId: account.id,
       );
 
       final accounts = await dbService.getAllAccounts();
       final updatedAccount = accounts.firstWhere((a) => a.id == account.id);
-      expect(updatedAccount.balance.amount, 4000.0);
+      expect(updatedAccount.balance, 4000.0);
     });
 
     test('Creating a transfer updates both account balances', () async {
@@ -63,12 +63,12 @@ void main() {
       final dbService = DatabaseService();
 
       final category = await dbService.createCategory('Transfer');
-      final account1 = await dbService.createAccount(createAccount('Checking', Money.rub(1000.0)), Money.rub(1000.0));
-      final account2 = await dbService.createAccount(createAccount('Savings', Money.rub(500.0)), Money.rub(500.0));
+      final account1 = await dbService.createAccount(createAccount('Checking', 1000.0), Money.rub(1000.0));
+      final account2 = await dbService.createAccount(createAccount('Savings', 500.0), Money.rub(500.0));
 
       await dbService.createTransaction(
         title: 'Save money',
-        amount: Money.rub(200.0),
+        amount: 200.0,
         categoryId: category.id,
         fromAccountId: account1.id,
         toAccountId: account2.id,
@@ -78,8 +78,8 @@ void main() {
       final updatedAccount1 = accounts.firstWhere((a) => a.id == account1.id);
       final updatedAccount2 = accounts.firstWhere((a) => a.id == account2.id);
 
-      expect(updatedAccount1.balance.amount, 800.0);
-      expect(updatedAccount2.balance.amount, 700.0);
+      expect(updatedAccount1.balance, 800.0);
+      expect(updatedAccount2.balance, 700.0);
     });
 
     test('Deleting a transaction reverses balance changes', () async {
@@ -87,24 +87,24 @@ void main() {
       final dbService = DatabaseService();
 
       final category = await dbService.createCategory('Food');
-      final account = await dbService.createAccount(createAccount('Checking', Money.rub(1000.0)), Money.rub(1000.0));
+      final account = await dbService.createAccount(createAccount('Checking', 1000.0), Money.rub(1000.0));
 
       final transaction = await dbService.createTransaction(
         title: 'Groceries',
-        amount: Money.rub(50.0),
+        amount: 50.0,
         categoryId: category.id,
         fromAccountId: account.id,
       );
 
       var accounts = await dbService.getAllAccounts();
       var updatedAccount = accounts.firstWhere((a) => a.id == account.id);
-      expect(updatedAccount.balance.amount, 950.0);
+      expect(updatedAccount.balance, 950.0);
 
       await dbService.deleteTransaction(transaction.id);
 
       accounts = await dbService.getAllAccounts();
       updatedAccount = accounts.firstWhere((a) => a.id == account.id);
-      expect(updatedAccount.balance.amount, 1000.0);
+      expect(updatedAccount.balance, 1000.0);
     });
   });
 
@@ -114,12 +114,12 @@ void main() {
       final dbService = DatabaseService();
 
       final category = await dbService.createCategory('Food');
-      final account = await dbService.createAccount(createAccount('Checking', Money.rub(100.0)), Money.rub(100.0));
+      final account = await dbService.createAccount(createAccount('Checking', 100.0), Money.rub(100.0));
 
       expect(
         () => dbService.createTransaction(
           title: 'Expensive Item',
-          amount: Money.rub(150.0),
+          amount: 150.0,
           categoryId: category.id,
           fromAccountId: account.id,
         ),
@@ -128,7 +128,7 @@ void main() {
 
       final accounts = await dbService.getAllAccounts();
       final updatedAccount = accounts.firstWhere((a) => a.id == account.id);
-      expect(updatedAccount.balance.amount, 100.0);
+      expect(updatedAccount.balance, 100.0);
     });
 
     test(
@@ -138,13 +138,13 @@ void main() {
         final dbService = DatabaseService();
 
         final category = await dbService.createCategory('Food');
-        final account = await dbService.createAccount(createAccount('Checking', Money.rub(1000.0)), Money.rub(1000.0));
+        final account = await dbService.createAccount(createAccount('Checking', 1000.0), Money.rub(1000.0));
 
         final now = DateTime.now();
 
         await dbService.createTransaction(
           title: 'Current Expense',
-          amount: Money.rub(900.0),
+          amount: 900.0,
           categoryId: category.id,
           fromAccountId: account.id,
           doneAt: now,
@@ -152,12 +152,12 @@ void main() {
 
         var accounts = await dbService.getAllAccounts();
         var updatedAccount = accounts.firstWhere((a) => a.id == account.id);
-        expect(updatedAccount.balance.amount, 100.0);
+        expect(updatedAccount.balance, 100.0);
 
         expect(
           () => dbService.createTransaction(
             title: 'Past Expense',
-            amount: Money.rub(950.0),
+            amount: 950.0,
             categoryId: category.id,
             fromAccountId: account.id,
             doneAt: now.subtract(const Duration(days: 1)),
@@ -167,7 +167,7 @@ void main() {
 
         accounts = await dbService.getAllAccounts();
         updatedAccount = accounts.firstWhere((a) => a.id == account.id);
-        expect(updatedAccount.balance.amount, 100.0);
+        expect(updatedAccount.balance, 100.0);
 
         final transactions = await dbService.getAllTransactions();
         expect(transactions.length, 1);
@@ -179,13 +179,13 @@ void main() {
       final dbService = DatabaseService();
 
       final category = await dbService.createCategory('Food');
-      final account = await dbService.createAccount(createAccount('Checking', Money.rub(1000.0)), Money.rub(1000.0));
+      final account = await dbService.createAccount(createAccount('Checking', 1000.0), Money.rub(1000.0));
 
       final now = DateTime.now();
 
       await dbService.createTransaction(
         title: 'Current Expense',
-        amount: Money.rub(100.0),
+        amount: 100.0,
         categoryId: category.id,
         fromAccountId: account.id,
         doneAt: now,
@@ -193,11 +193,11 @@ void main() {
 
       var accounts = await dbService.getAllAccounts();
       var updatedAccount = accounts.firstWhere((a) => a.id == account.id);
-      expect(updatedAccount.balance.amount, 900.0);
+      expect(updatedAccount.balance, 900.0);
 
       await dbService.createTransaction(
         title: 'Past Expense',
-        amount: Money.rub(50.0),
+        amount: 50.0,
         categoryId: category.id,
         fromAccountId: account.id,
         doneAt: now.subtract(const Duration(days: 1)),
@@ -205,7 +205,7 @@ void main() {
 
       accounts = await dbService.getAllAccounts();
       updatedAccount = accounts.firstWhere((a) => a.id == account.id);
-      expect(updatedAccount.balance.amount, 850.0);
+      expect(updatedAccount.balance, 850.0);
 
       final transactions = await dbService.getAllTransactions();
       expect(transactions.length, 2);
@@ -218,13 +218,13 @@ void main() {
         final dbService = DatabaseService();
 
         final category = await dbService.createCategory('Income');
-        final account = await dbService.createAccount(createAccount('Checking', Money.rub(0.0)), Money.rub(0.0));
+        final account = await dbService.createAccount(createAccount('Checking', 0.0), Money.rub(0.0));
 
         final now = DateTime.now();
 
         final incomeTransaction = await dbService.createTransaction(
           title: 'Past Income',
-          amount: Money.rub(100.0),
+          amount: 100.0,
           categoryId: category.id,
           toAccountId: account.id,
           doneAt: now.subtract(const Duration(days: 2)),
@@ -232,7 +232,7 @@ void main() {
 
         await dbService.createTransaction(
           title: 'Current Expense',
-          amount: Money.rub(90.0),
+          amount: 90.0,
           categoryId: category.id,
           fromAccountId: account.id,
           doneAt: now.subtract(const Duration(days: 1)),
@@ -240,7 +240,7 @@ void main() {
 
         var accounts = await dbService.getAllAccounts();
         var updatedAccount = accounts.firstWhere((a) => a.id == account.id);
-        expect(updatedAccount.balance.amount, 10.0);
+        expect(updatedAccount.balance, 10.0);
 
         expect(
           () => dbService.deleteTransaction(incomeTransaction.id),
@@ -249,7 +249,7 @@ void main() {
 
         accounts = await dbService.getAllAccounts();
         updatedAccount = accounts.firstWhere((a) => a.id == account.id);
-        expect(updatedAccount.balance.amount, 10.0);
+        expect(updatedAccount.balance, 10.0);
 
         final transactions = await dbService.getAllTransactions();
         expect(transactions.length, 2);
@@ -263,13 +263,13 @@ void main() {
         final dbService = DatabaseService();
 
         final category = await dbService.createCategory('Mixed');
-        final account = await dbService.createAccount(createAccount('Checking', Money.rub(500.0)), Money.rub(500.0));
+        final account = await dbService.createAccount(createAccount('Checking', 500.0), Money.rub(500.0));
 
         final now = DateTime.now();
 
         await dbService.createTransaction(
           title: 'Transaction 3',
-          amount: Money.rub(100.0),
+          amount: 100.0,
           categoryId: category.id,
           fromAccountId: account.id,
           doneAt: now.subtract(const Duration(days: 1)),
@@ -277,7 +277,7 @@ void main() {
 
         await dbService.createTransaction(
           title: 'Transaction 1',
-          amount: Money.rub(50.0),
+          amount: 50.0,
           categoryId: category.id,
           toAccountId: account.id,
           doneAt: now.subtract(const Duration(days: 5)),
@@ -285,7 +285,7 @@ void main() {
 
         await dbService.createTransaction(
           title: 'Transaction 2',
-          amount: Money.rub(30.0),
+          amount: 30.0,
           categoryId: category.id,
           fromAccountId: account.id,
           doneAt: now.subtract(const Duration(days: 3)),
@@ -293,7 +293,7 @@ void main() {
 
         final accounts = await dbService.getAllAccounts();
         final updatedAccount = accounts.firstWhere((a) => a.id == account.id);
-        expect(updatedAccount.balance.amount, 420.0);
+        expect(updatedAccount.balance, 420.0);
       },
     );
   });
@@ -304,11 +304,11 @@ void main() {
       final dbService = DatabaseService();
 
       final category = await dbService.createCategory('Food');
-      final account = await dbService.createAccount(createAccount('Checking', Money.rub(1000.0)), Money.rub(1000.0));
+      final account = await dbService.createAccount(createAccount('Checking', 1000.0), Money.rub(1000.0));
 
       await dbService.createTransaction(
         title: 'Groceries',
-        amount: Money.rub(50.0),
+        amount: 50.0,
         categoryId: category.id,
         fromAccountId: account.id,
       );
@@ -326,7 +326,7 @@ void main() {
       await DatabaseService.init();
       final dbService = DatabaseService();
 
-      final account = await dbService.createAccount(createAccount('Checking', Money.rub(1000.0)), Money.rub(1000.0));
+      final account = await dbService.createAccount(createAccount('Checking', 1000.0), Money.rub(1000.0));
 
       await dbService.deleteAccount(account.id);
 
@@ -339,11 +339,11 @@ void main() {
       final dbService = DatabaseService();
 
       final category = await dbService.createCategory('Food');
-      final account = await dbService.createAccount(createAccount('Checking', Money.rub(1000.0)), Money.rub(1000.0));
+      final account = await dbService.createAccount(createAccount('Checking', 1000.0), Money.rub(1000.0));
 
       await dbService.createTransaction(
         title: 'Expense',
-        amount: Money.rub(50.0),
+        amount: 50.0,
         categoryId: category.id,
         fromAccountId: account.id,
       );
@@ -359,11 +359,11 @@ void main() {
       final dbService = DatabaseService();
 
       final category = await dbService.createCategory('Salary');
-      final account = await dbService.createAccount(createAccount('Checking', Money.rub(1000.0)), Money.rub(1000.0));
+      final account = await dbService.createAccount(createAccount('Checking', 1000.0), Money.rub(1000.0));
 
       await dbService.createTransaction(
         title: 'Income',
-        amount: Money.rub(500.0),
+        amount: 500.0,
         categoryId: category.id,
         toAccountId: account.id,
       );
@@ -381,27 +381,27 @@ void main() {
       final dbService = DatabaseService();
 
       final category = await dbService.createCategory('Food');
-      final account = await dbService.createAccount(createAccount('Checking', Money.rub(1000.0)), Money.rub(1000.0));
+      final account = await dbService.createAccount(createAccount('Checking', 1000.0), Money.rub(1000.0));
 
       final transaction = await dbService.createTransaction(
         title: 'Groceries',
-        amount: Money.rub(50.0),
+        amount: 50.0,
         categoryId: category.id,
         fromAccountId: account.id,
       );
 
       var accounts = await dbService.getAllAccounts();
       var updatedAccount = accounts.firstWhere((a) => a.id == account.id);
-      expect(updatedAccount.balance.amount, 950.0);
+      expect(updatedAccount.balance, 950.0);
 
       await dbService.updateTransaction(id: transaction.id, amount: 100.0);
 
       accounts = await dbService.getAllAccounts();
       updatedAccount = accounts.firstWhere((a) => a.id == account.id);
-      expect(updatedAccount.balance.amount, 900.0);
+      expect(updatedAccount.balance, 900.0);
 
       final updatedTransaction = await dbService.getTransaction(transaction.id);
-      expect(updatedTransaction.amount.amount, 100.0);
+      expect(updatedTransaction.amount, 100.0);
     });
 
     test(
@@ -411,18 +411,18 @@ void main() {
         final dbService = DatabaseService();
 
         final category = await dbService.createCategory('Food');
-        final account = await dbService.createAccount(createAccount('Checking', Money.rub(100.0)), Money.rub(100.0));
+        final account = await dbService.createAccount(createAccount('Checking', 100.0), Money.rub(100.0));
 
         final transaction = await dbService.createTransaction(
           title: 'Groceries',
-          amount: Money.rub(50.0),
+          amount: 50.0,
           categoryId: category.id,
           fromAccountId: account.id,
         );
 
         var accounts = await dbService.getAllAccounts();
         var updatedAccount = accounts.firstWhere((a) => a.id == account.id);
-        expect(updatedAccount.balance.amount, 50.0);
+        expect(updatedAccount.balance, 50.0);
 
         expect(
           () => dbService.updateTransaction(id: transaction.id, amount: 150.0),
@@ -431,12 +431,12 @@ void main() {
 
         accounts = await dbService.getAllAccounts();
         updatedAccount = accounts.firstWhere((a) => a.id == account.id);
-        expect(updatedAccount.balance.amount, 50.0);
+        expect(updatedAccount.balance, 50.0);
 
         final unchangedTransaction = await dbService.getTransaction(
           transaction.id,
         );
-        expect(unchangedTransaction.amount.amount, 50.0);
+        expect(unchangedTransaction.amount, 50.0);
       },
     );
 
@@ -447,13 +447,13 @@ void main() {
         final dbService = DatabaseService();
 
         final category = await dbService.createCategory('Food');
-        final account = await dbService.createAccount(createAccount('Checking', Money.rub(1000.0)), Money.rub(1000.0));
+        final account = await dbService.createAccount(createAccount('Checking', 1000.0), Money.rub(1000.0));
 
         final now = DateTime.now();
 
         final transaction1 = await dbService.createTransaction(
           title: 'Past Expense',
-          amount: Money.rub(50.0),
+          amount: 50.0,
           categoryId: category.id,
           fromAccountId: account.id,
           doneAt: now.subtract(const Duration(days: 2)),
@@ -461,7 +461,7 @@ void main() {
 
         await dbService.createTransaction(
           title: 'Current Expense',
-          amount: Money.rub(900.0),
+          amount: 900.0,
           categoryId: category.id,
           fromAccountId: account.id,
           doneAt: now,
@@ -469,7 +469,7 @@ void main() {
 
         var accounts = await dbService.getAllAccounts();
         var updatedAccount = accounts.firstWhere((a) => a.id == account.id);
-        expect(updatedAccount.balance.amount, 50.0);
+        expect(updatedAccount.balance, 50.0);
 
         expect(
           () => dbService.updateTransaction(id: transaction1.id, amount: 200.0),
@@ -478,7 +478,7 @@ void main() {
 
         accounts = await dbService.getAllAccounts();
         updatedAccount = accounts.firstWhere((a) => a.id == account.id);
-        expect(updatedAccount.balance.amount, 50.0);
+        expect(updatedAccount.balance, 50.0);
       },
     );
 
@@ -487,24 +487,24 @@ void main() {
       final dbService = DatabaseService();
 
       final category = await dbService.createCategory('Food');
-      final account = await dbService.createAccount(createAccount('Checking', Money.rub(1000.0)), Money.rub(1000.0));
+      final account = await dbService.createAccount(createAccount('Checking', 1000.0), Money.rub(1000.0));
 
       final transaction = await dbService.createTransaction(
         title: 'Groceries',
-        amount: Money.rub(100.0),
+        amount: 100.0,
         categoryId: category.id,
         fromAccountId: account.id,
       );
 
       var accounts = await dbService.getAllAccounts();
       var updatedAccount = accounts.firstWhere((a) => a.id == account.id);
-      expect(updatedAccount.balance.amount, 900.0);
+      expect(updatedAccount.balance, 900.0);
 
       await dbService.updateTransaction(id: transaction.id, amount: 50.0);
 
       accounts = await dbService.getAllAccounts();
       updatedAccount = accounts.firstWhere((a) => a.id == account.id);
-      expect(updatedAccount.balance.amount, 950.0);
+      expect(updatedAccount.balance, 950.0);
     });
 
     test('Can update transaction amount for income', () async {
@@ -512,24 +512,24 @@ void main() {
       final dbService = DatabaseService();
 
       final category = await dbService.createCategory('Salary');
-      final account = await dbService.createAccount(createAccount('Checking', Money.rub(0.0)), Money.rub(0.0));
+      final account = await dbService.createAccount(createAccount('Checking', 0.0), Money.rub(0.0));
 
       final transaction = await dbService.createTransaction(
         title: 'Monthly Salary',
-        amount: Money.rub(1000.0),
+        amount: 1000.0,
         categoryId: category.id,
         toAccountId: account.id,
       );
 
       var accounts = await dbService.getAllAccounts();
       var updatedAccount = accounts.firstWhere((a) => a.id == account.id);
-      expect(updatedAccount.balance.amount, 1000.0);
+      expect(updatedAccount.balance, 1000.0);
 
       await dbService.updateTransaction(id: transaction.id, amount: 1500.0);
 
       accounts = await dbService.getAllAccounts();
       updatedAccount = accounts.firstWhere((a) => a.id == account.id);
-      expect(updatedAccount.balance.amount, 1500.0);
+      expect(updatedAccount.balance, 1500.0);
     });
 
     test('Can update transfer amount', () async {
@@ -537,12 +537,12 @@ void main() {
       final dbService = DatabaseService();
 
       final category = await dbService.createCategory('Transfer');
-      final account1 = await dbService.createAccount(createAccount('Checking', Money.rub(1000.0)), Money.rub(1000.0));
-      final account2 = await dbService.createAccount(createAccount('Savings', Money.rub(500.0)), Money.rub(500.0));
+      final account1 = await dbService.createAccount(createAccount('Checking', 1000.0), Money.rub(1000.0));
+      final account2 = await dbService.createAccount(createAccount('Savings', 500.0), Money.rub(500.0));
 
       final transaction = await dbService.createTransaction(
         title: 'Save money',
-        amount: Money.rub(200.0),
+        amount: 200.0,
         categoryId: category.id,
         fromAccountId: account1.id,
         toAccountId: account2.id,
@@ -551,16 +551,16 @@ void main() {
       var accounts = await dbService.getAllAccounts();
       var updatedAccount1 = accounts.firstWhere((a) => a.id == account1.id);
       var updatedAccount2 = accounts.firstWhere((a) => a.id == account2.id);
-      expect(updatedAccount1.balance.amount, 800.0);
-      expect(updatedAccount2.balance.amount, 700.0);
+      expect(updatedAccount1.balance, 800.0);
+      expect(updatedAccount2.balance, 700.0);
 
       await dbService.updateTransaction(id: transaction.id, amount: 300.0);
 
       accounts = await dbService.getAllAccounts();
       updatedAccount1 = accounts.firstWhere((a) => a.id == account1.id);
       updatedAccount2 = accounts.firstWhere((a) => a.id == account2.id);
-      expect(updatedAccount1.balance.amount, 700.0);
-      expect(updatedAccount2.balance.amount, 800.0);
+      expect(updatedAccount1.balance, 700.0);
+      expect(updatedAccount2.balance, 800.0);
     });
   });
 }

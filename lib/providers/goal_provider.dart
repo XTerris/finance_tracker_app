@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import '../models/goal.dart';
+import '../models/money.dart';
 import '../service_locator.dart';
 
 // Провайдер для управления состоянием финансовых целей
@@ -37,7 +38,7 @@ class GoalProvider extends ChangeNotifier {
   // Создание новой цели
   Future<void> addGoal({
     required int accountId,
-    required double targetAmount,
+    required Money targetAmount,
     required DateTime deadline,
   }) async {
     final goal = await serviceLocator.databaseService.createGoal(
@@ -53,7 +54,7 @@ class GoalProvider extends ChangeNotifier {
   Future<void> updateGoal({
     required int id,
     int? accountId,
-    double? targetAmount,
+    Money? targetAmount,
     DateTime? deadline,
     bool? isCompleted,
   }) async {

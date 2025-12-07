@@ -189,7 +189,7 @@ class TransactionPlate extends PlateBase {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
-                _formatAmount(transaction.amount),
+                _formatAmount(transaction.amount.amount),
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w600,

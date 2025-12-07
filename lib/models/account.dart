@@ -1,8 +1,10 @@
+import 'money.dart';
+
 // Модель счета (банковский счет, кошелек и т.д.)
 class Account {
   final int id;
   final String name;
-  double balance; // Текущий баланс счета
+  Money balance; // Текущий баланс счета
 
   Account({required this.id, required this.name, required this.balance});
 
@@ -11,12 +13,12 @@ class Account {
     return Account(
       id: json['id'],
       name: json['name'],
-      balance: json['balance'].toDouble(),
+      balance: Money.fromDatabase(json['balance'].toDouble()),
     );
   }
 
   // Преобразование объекта в JSON (для сохранения в БД)
   Map<String, dynamic> toJson() {
-    return {'id': id, 'name': name, 'balance': balance};
+    return {'id': id, 'name': name, 'balance': balance.toDatabaseValue()};
   }
 }

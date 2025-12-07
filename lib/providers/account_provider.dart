@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import '../models/account.dart';
+import '../models/money.dart';
 import '../service_locator.dart';
 
 // Провайдер для управления состоянием счетов
@@ -26,7 +27,7 @@ class AccountProvider extends ChangeNotifier {
   }
 
   // Создание нового счета
-  Future<void> addAccount(String accountName, double initialBalance) async {
+  Future<void> addAccount(String accountName, Money initialBalance) async {
     final account = await serviceLocator.databaseService.createAccount(
       accountName,
       initialBalance,
@@ -39,7 +40,7 @@ class AccountProvider extends ChangeNotifier {
   Future<void> updateAccount({
     required int id,
     String? name,
-    double? balance,
+    Money? balance,
   }) async {
     final updatedAccount = await serviceLocator.databaseService.updateAccount(
       id: id,

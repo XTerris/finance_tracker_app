@@ -5,6 +5,7 @@ import '../models/transaction.dart' as models;
 import '../models/category.dart';
 import '../models/account.dart';
 import '../models/goal.dart';
+import '../models/money.dart';
 
 // Сервис для работы с локальной SQLite базой данных
 class DatabaseService {
@@ -123,18 +124,18 @@ class DatabaseService {
       return Account(
         id: maps[i]['id'],
         name: maps[i]['name'],
-        balance: maps[i]['balance'],
+        balance: Money.fromDatabase(maps[i]['balance']),
       );
     });
   }
 
-  Future<Account> createAccount(String name, double initialBalance) async {
-    if (initialBalance < 0) {
+  Future<Account> createAccount(String name, Money initialBalance) async {
+    if (initialBalance.amount < 0) {
       throw Exception('Начальный баланс не может быть отрицательным');
     }
     final id = await _db.insert(_accountTable, {
       'name': name,
-      'balance': initialBalance,
+      'balance': initialBalance.toDatabaseValue(),
     }, conflictAlgorithm: ConflictAlgorithm.replace);
     return Account(id: id, name: name, balance: initialBalance);
   }
@@ -142,7 +143,7 @@ class DatabaseService {
   Future<Account> updateAccount({
     required int id,
     String? name,
-    double? balance,
+    Money? balance,
   }) async {
     final current = await _db.query(
       _accountTable,
@@ -154,13 +155,13 @@ class DatabaseService {
       throw Exception('Счёт не найден');
     }
 
-    if (balance != null && balance < 0) {
+    if (balance != null && balance.amount < 0) {
       throw Exception('Баланс счёта не может быть отрицательным');
     }
 
     final Map<String, dynamic> updates = {};
     if (name != null) updates['name'] = name;
-    if (balance != null) updates['balance'] = balance;
+    if (balance != null) updates['balance'] = balance.toDatabaseValue();
 
     await _db.update(_accountTable, updates, where: 'id = ?', whereArgs: [id]);
 
@@ -173,7 +174,7 @@ class DatabaseService {
     return Account(
       id: updated[0]['id'] as int,
       name: updated[0]['name'] as String,
-      balance: updated[0]['balance'] as double,
+      balance: Money.fromDatabase(updated[0]['balance'] as double),
     );
   }
 
@@ -204,7 +205,7 @@ class DatabaseService {
       return models.Transaction(
         id: maps[i]['id'],
         title: maps[i]['title'],
-        amount: maps[i]['amount'],
+        amount: Money.fromDatabase(maps[i]['amount']),
         doneAt: DateTime.parse(maps[i]['done_at']),
         categoryId: maps[i]['category_id'],
         fromAccountId: maps[i]['from_account_id'],
@@ -227,7 +228,7 @@ class DatabaseService {
     return models.Transaction(
       id: maps[0]['id'],
       title: maps[0]['title'],
-      amount: maps[0]['amount'],
+      amount: Money.fromDatabase(maps[0]['amount']),
       doneAt: DateTime.parse(maps[0]['done_at']),
       categoryId: maps[0]['category_id'],
       fromAccountId: maps[0]['from_account_id'],
@@ -238,19 +239,19 @@ class DatabaseService {
   // Создание транзакции с автоматическим обновлением балансов счетов
   Future<models.Transaction> createTransaction({
     required String title,
-    required double amount,
+    required Money amount,
     required int categoryId,
     DateTime? doneAt,
     int? fromAccountId,
     int? toAccountId,
   }) async {
-    if (amount <= 0) {
+    if (amount.amount <= 0) {
       throw Exception('Сумма операции должна быть больше нуля');
     }
     return await _db.transaction((txn) async {
       final id = await txn.insert(_transactionTable, {
         'title': title,
-        'amount': amount,
+        'amount': amount.toDatabaseValue(),
         'done_at': (doneAt ?? DateTime.now()).toIso8601String(),
         'category_id': categoryId,
         'from_account_id': fromAccountId,
@@ -259,10 +260,10 @@ class DatabaseService {
 
       // Обновление балансов связанных счетов
       if (fromAccountId != null) {
-        await _updateAccountBalance(txn, fromAccountId, -amount);
+        await _updateAccountBalance(txn, fromAccountId, -amount.amount);
       }
       if (toAccountId != null) {
-        await _updateAccountBalance(txn, toAccountId, amount);
+        await _updateAccountBalance(txn, toAccountId, amount.amount);
       }
 
       // Проверка на отрицательный баланс в истории счетов
@@ -289,7 +290,7 @@ class DatabaseService {
       return models.Transaction(
         id: result[0]['id'] as int,
         title: result[0]['title'] as String,
-        amount: result[0]['amount'] as double,
+        amount: Money.fromDatabase(result[0]['amount'] as double),
         doneAt: DateTime.parse(result[0]['done_at'] as String),
         categoryId: result[0]['category_id'] as int,
         fromAccountId: result[0]['from_account_id'] as int?,
@@ -303,9 +304,9 @@ class DatabaseService {
     required int id,
     String? title,
     int? categoryId,
-    double? amount,
+    Money? amount,
   }) async {
-    if (amount != null && amount <= 0) {
+    if (amount != null && amount.amount <= 0) {
       throw Exception('Сумма операции должна быть больше нуля');
     }
     return await _db.transaction((txn) async {
@@ -325,7 +326,7 @@ class DatabaseService {
       final toAccountId = currentTxn['to_account_id'] as int?;
 
       // Если сумма изменилась, откатываем и применяем новую
-      if (amount != null && amount != oldAmount) {
+      if (amount != null && amount.amount != oldAmount) {
         if (fromAccountId != null) {
           await _updateAccountBalance(txn, fromAccountId, oldAmount);
         }
@@ -334,10 +335,10 @@ class DatabaseService {
         }
 
         if (fromAccountId != null) {
-          await _updateAccountBalance(txn, fromAccountId, -amount);
+          await _updateAccountBalance(txn, fromAccountId, -amount.amount);
         }
         if (toAccountId != null) {
-          await _updateAccountBalance(txn, toAccountId, amount);
+          await _updateAccountBalance(txn, toAccountId, amount.amount);
         }
 
         final accountsToValidate = <int>{};
@@ -358,7 +359,7 @@ class DatabaseService {
       final Map<String, dynamic> updates = {};
       if (title != null) updates['title'] = title;
       if (categoryId != null) updates['category_id'] = categoryId;
-      if (amount != null) updates['amount'] = amount;
+      if (amount != null) updates['amount'] = amount.toDatabaseValue();
 
       await txn.update(
         _transactionTable,
@@ -376,7 +377,7 @@ class DatabaseService {
       return models.Transaction(
         id: result[0]['id'] as int,
         title: result[0]['title'] as String,
-        amount: result[0]['amount'] as double,
+        amount: Money.fromDatabase(result[0]['amount'] as double),
         doneAt: DateTime.parse(result[0]['done_at'] as String),
         categoryId: result[0]['category_id'] as int,
         fromAccountId: result[0]['from_account_id'] as int?,
@@ -534,7 +535,7 @@ class DatabaseService {
       return Goal(
         id: maps[i]['id'],
         accountId: maps[i]['account_id'],
-        targetAmount: maps[i]['target_amount'],
+        targetAmount: Money.fromDatabase(maps[i]['target_amount']),
         deadline: DateTime.parse(maps[i]['deadline']),
         isCompleted: maps[i]['is_completed'] == 1,
       );
@@ -543,15 +544,15 @@ class DatabaseService {
 
   Future<Goal> createGoal({
     required int accountId,
-    required double targetAmount,
+    required Money targetAmount,
     required DateTime deadline,
   }) async {
-    if (targetAmount <= 0) {
+    if (targetAmount.amount <= 0) {
       throw Exception('Целевая сумма должна быть больше нуля');
     }
     final id = await _db.insert(_goalTable, {
       'account_id': accountId,
-      'target_amount': targetAmount,
+      'target_amount': targetAmount.toDatabaseValue(),
       'deadline': deadline.toIso8601String().split('T')[0],
       'is_completed': 0,
     }, conflictAlgorithm: ConflictAlgorithm.replace);
@@ -565,7 +566,7 @@ class DatabaseService {
     return Goal(
       id: result[0]['id'] as int,
       accountId: result[0]['account_id'] as int,
-      targetAmount: result[0]['target_amount'] as double,
+      targetAmount: Money.fromDatabase(result[0]['target_amount'] as double),
       deadline: DateTime.parse(result[0]['deadline'] as String),
       isCompleted: result[0]['is_completed'] == 1,
     );
@@ -574,16 +575,16 @@ class DatabaseService {
   Future<Goal> updateGoal({
     required int id,
     int? accountId,
-    double? targetAmount,
+    Money? targetAmount,
     DateTime? deadline,
     bool? isCompleted,
   }) async {
-    if (targetAmount != null && targetAmount <= 0) {
+    if (targetAmount != null && targetAmount.amount <= 0) {
       throw Exception('Целевая сумма должна быть больше нуля');
     }
     final Map<String, dynamic> updates = {};
     if (accountId != null) updates['account_id'] = accountId;
-    if (targetAmount != null) updates['target_amount'] = targetAmount;
+    if (targetAmount != null) updates['target_amount'] = targetAmount.toDatabaseValue();
     if (deadline != null) {
       updates['deadline'] = deadline.toIso8601String().split('T')[0];
     }
@@ -600,7 +601,7 @@ class DatabaseService {
     return Goal(
       id: result[0]['id'] as int,
       accountId: result[0]['account_id'] as int,
-      targetAmount: result[0]['target_amount'] as double,
+      targetAmount: Money.fromDatabase(result[0]['target_amount'] as double),
       deadline: DateTime.parse(result[0]['deadline'] as String),
       isCompleted: result[0]['is_completed'] == 1,
     );

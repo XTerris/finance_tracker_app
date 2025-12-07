@@ -81,9 +81,9 @@ class _ReportsTabState extends State<ReportsTab> {
         final hasToAccount = transaction.toAccountId != null;
 
         if (hasToAccount && !hasFromAccount) {
-          totalIncome += transaction.amount;
+          totalIncome += transaction.amount.amount;
         } else if (hasFromAccount && !hasToAccount) {
-          totalExpense += transaction.amount;
+          totalExpense += transaction.amount.amount;
         }
       }
     }
@@ -563,7 +563,7 @@ class _ReportsTabState extends State<ReportsTab> {
               }
 
               chartData[categoryName] =
-                  (chartData[categoryName] ?? 0) + transaction.amount;
+                  (chartData[categoryName] ?? 0) + transaction.amount.amount;
             }
           }
         } else {
@@ -591,7 +591,7 @@ class _ReportsTabState extends State<ReportsTab> {
                 'dd.MM.yyyy',
               ).format(transaction.doneAt);
               if (allDaysMap.containsKey(dateKey)) {
-                allDaysMap[dateKey] = allDaysMap[dateKey]! + transaction.amount;
+                allDaysMap[dateKey] = allDaysMap[dateKey]! + transaction.amount.amount;
               }
             }
           }
@@ -1224,7 +1224,7 @@ class _ReportsTabState extends State<ReportsTab> {
         final accounts = accountProvider.accounts;
         final totalBalance = accounts.fold<double>(
           0,
-          (sum, account) => sum + account.balance,
+          (sum, account) => sum + account.balance.amount,
         );
 
         final stats = _calculateStatistics(transactions);

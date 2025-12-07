@@ -65,7 +65,7 @@ class _AccountsAndGoalsTabState extends State<AccountsAndGoalsTab> {
                     final accounts = accountProvider.accounts;
                     final totalBalance = accounts.fold<double>(
                       0,
-                      (sum, account) => sum + account.balance,
+                      (sum, account) => sum + account.balance.amount,
                     );
 
                     return Column(

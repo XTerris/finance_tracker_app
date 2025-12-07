@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import '../../../models/money.dart';
 import '../../../providers/transaction_provider.dart';
 import '../../../providers/category_provider.dart';
 import '../../../providers/account_provider.dart';
@@ -180,7 +181,7 @@ class _AddTransactionBottomSheetState
       // Создание транзакции и обновление связанных данных
       await transactionProvider.addTransaction(
         title: _titleController.text.trim(),
-        amount: double.parse(_amountController.text.trim()),
+        amount: Money.rub(double.parse(_amountController.text.trim())),
         categoryId: _selectedCategoryId!,
         fromAccountId: _selectedFromAccountId,
         toAccountId: _selectedToAccountId,
@@ -372,7 +373,7 @@ class _AddTransactionBottomSheetState
                             return DropdownMenuItem<int>(
                               value: account.id,
                               child: Text(
-                                '${account.name} (${account.balance.toStringAsFixed(2)})',
+                                '${account.name} (${account.balance.amount.toStringAsFixed(2)})',
                               ),
                             );
                           })
@@ -412,7 +413,7 @@ class _AddTransactionBottomSheetState
                             return DropdownMenuItem<int>(
                               value: account.id,
                               child: Text(
-                                '${account.name} (${account.balance.toStringAsFixed(2)})',
+                                '${account.name} (${account.balance.amount.toStringAsFixed(2)})',
                               ),
                             );
                           })

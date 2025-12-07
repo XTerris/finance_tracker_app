@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../models/money.dart';
 import '../../../providers/account_provider.dart';
 import '../../../providers/goal_provider.dart';
 import 'add_bottom_sheet_base.dart';
@@ -39,7 +40,7 @@ class _AddAccountBottomSheetState
 
       await accountProvider.addAccount(
         _nameController.text.trim(),
-        double.parse(_balanceController.text.trim()),
+        Money.rub(double.parse(_balanceController.text.trim())),
       );
 
       await goalProvider.update();

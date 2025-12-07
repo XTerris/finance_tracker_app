@@ -198,7 +198,7 @@ class AccountPlate extends PlateBase {
             borderRadius: BorderRadius.circular(8),
           ),
           child: Text(
-            _formatBalance(account.balance),
+            _formatBalance(account.balance.amount),
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w600,
@@ -266,7 +266,7 @@ class AccountPlate extends PlateBase {
               );
             }
 
-            final progress = account.balance / goal.targetAmount;
+            final progress = account.balance.amount / goal.targetAmount.amount;
             final progressPercent = (progress * 100).clamp(0, 100);
             final daysLeft = goal.deadline.difference(DateTime.now()).inDays;
 
@@ -356,7 +356,7 @@ class AccountPlate extends PlateBase {
                             ),
                           ),
                           Text(
-                            _formatBalance(goal.targetAmount),
+                            _formatBalance(goal.targetAmount.amount),
                             style: const TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
@@ -406,7 +406,7 @@ class AccountPlate extends PlateBase {
                                 ),
                               ),
                               Text(
-                                'Осталось: ${_formatBalance(goal.targetAmount - account.balance)}',
+                                'Осталось: ${_formatBalance(goal.targetAmount.amount - account.balance.amount)}',
                                 style: const TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w500,

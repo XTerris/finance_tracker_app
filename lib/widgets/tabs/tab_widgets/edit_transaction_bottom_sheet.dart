@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../models/transaction.dart';
+import '../../../models/money.dart';
 import '../../../providers/transaction_provider.dart';
 import '../../../providers/category_provider.dart';
 import '../../../providers/account_provider.dart';
@@ -31,7 +32,7 @@ class _EditTransactionBottomSheetState
     // Заполнение полей текущими значениями транзакции
     _titleController = TextEditingController(text: widget.transaction.title);
     _amountController = TextEditingController(
-      text: widget.transaction.amount.toString(),
+      text: widget.transaction.amount.amount.toString(),
     );
     _selectedCategoryId = widget.transaction.categoryId;
   }
@@ -132,7 +133,7 @@ class _EditTransactionBottomSheetState
       final accountProvider = context.read<AccountProvider>();
       final goalProvider = context.read<GoalProvider>();
 
-      final amount = double.parse(_amountController.text.trim());
+      final amount = Money.rub(double.parse(_amountController.text.trim()));
 
       await transactionProvider.updateTransaction(
         id: widget.transaction.id,

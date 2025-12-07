@@ -53,14 +53,14 @@ class _DashboardTabState extends State<DashboardTab> {
       if (!transaction.doneAt.isBefore(currentMonthStart) &&
           transaction.fromAccountId != null &&
           transaction.toAccountId == null) {
-        currentMonthExpenses += transaction.amount.abs();
+        currentMonthExpenses += transaction.amount.amount.abs();
       }
 
       // Доходы: есть счет зачисления, нет счета списания
       if (!transaction.doneAt.isBefore(currentMonthStart) &&
           transaction.toAccountId != null &&
           transaction.fromAccountId == null) {
-        currentMonthIncome += transaction.amount.abs();
+        currentMonthIncome += transaction.amount.amount.abs();
       }
     }
 
@@ -72,7 +72,7 @@ class _DashboardTabState extends State<DashboardTab> {
 
   // Подсчет общего баланса всех счетов
   double _calculateTotalBalance(List<Account> accounts) {
-    return accounts.fold(0.0, (sum, account) => sum + account.balance);
+    return accounts.fold(0.0, (sum, account) => sum + account.balance.amount);
   }
 
   // Приветствие в зависимости от времени суток

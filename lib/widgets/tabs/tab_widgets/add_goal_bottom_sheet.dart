@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../models/money.dart';
 import '../../../providers/goal_provider.dart';
 import '../../../models/account.dart';
 import 'add_bottom_sheet_base.dart';
@@ -68,7 +69,7 @@ class _AddGoalBottomSheetState
 
       await goalProvider.addGoal(
         accountId: widget.account.id,
-        targetAmount: double.parse(_targetAmountController.text.trim()),
+        targetAmount: Money.rub(double.parse(_targetAmountController.text.trim())),
         deadline: _selectedDeadline!,
       );
 

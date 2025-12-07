@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../models/account.dart';
+import '../../../models/money.dart';
 import '../../../providers/account_provider.dart';
 import '../../../providers/goal_provider.dart';
 import 'add_bottom_sheet_base.dart';
@@ -26,7 +27,7 @@ class _EditAccountBottomSheetState
     // Заполнение полей текущими значениями счета
     _nameController = TextEditingController(text: widget.account.name);
     _balanceController = TextEditingController(
-      text: widget.account.balance.toStringAsFixed(2),
+      text: widget.account.balance.amount.toStringAsFixed(2),
     );
   }
 
@@ -55,7 +56,7 @@ class _EditAccountBottomSheetState
       await accountProvider.updateAccount(
         id: widget.account.id,
         name: _nameController.text.trim(),
-        balance: double.parse(_balanceController.text.trim()),
+        balance: Money.rub(double.parse(_balanceController.text.trim())),
       );
 
       await goalProvider.update();

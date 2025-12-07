@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../../models/goal.dart';
+import '../../../models/money.dart';
 import '../../../providers/goal_provider.dart';
 import 'add_bottom_sheet_base.dart';
 
@@ -25,7 +26,7 @@ class _EditGoalBottomSheetState
     super.initState();
     // Заполнение полей текущими значениями цели
     _targetAmountController = TextEditingController(
-      text: widget.goal.targetAmount.toStringAsFixed(2),
+      text: widget.goal.targetAmount.amount.toStringAsFixed(2),
     );
     _selectedDeadline = widget.goal.deadline;
   }
@@ -66,7 +67,7 @@ class _EditGoalBottomSheetState
 
       await goalProvider.updateGoal(
         id: widget.goal.id,
-        targetAmount: double.parse(_targetAmountController.text.trim()),
+        targetAmount: Money.rub(double.parse(_targetAmountController.text.trim())),
         deadline: _selectedDeadline,
       );
 

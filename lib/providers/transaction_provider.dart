@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import '../models/transaction.dart';
+import '../models/money.dart';
 import '../service_locator.dart';
 
 // Провайдер для управления состоянием транзакций
@@ -27,7 +28,7 @@ class TransactionProvider extends ChangeNotifier {
   // Создание новой транзакции
   Future<void> addTransaction({
     required String title,
-    required double amount,
+    required Money amount,
     required int categoryId,
     int? fromAccountId,
     int? toAccountId,
@@ -51,7 +52,7 @@ class TransactionProvider extends ChangeNotifier {
     required int id,
     String? title,
     int? categoryId,
-    double? amount,
+    Money? amount,
   }) async {
     final updatedTransaction = await serviceLocator.databaseService
         .updateTransaction(

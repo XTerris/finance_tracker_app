@@ -1,8 +1,10 @@
+import 'money.dart';
+
 // Модель финансовой цели (накопление определенной суммы на счете)
 class Goal {
   final int id;
   final int accountId; // Счет, к которому привязана цель
-  final double targetAmount; // Целевая сумма для достижения
+  final Money targetAmount; // Целевая сумма для достижения
   final DateTime deadline; // Срок достижения цели
   bool isCompleted; // Флаг завершенности цели
 
@@ -19,7 +21,7 @@ class Goal {
     return Goal(
       id: json['id'],
       accountId: json['account_id'],
-      targetAmount: json['target_amount'].toDouble(),
+      targetAmount: Money.fromDatabase(json['target_amount'].toDouble()),
       deadline: DateTime.parse(json['deadline']),
       isCompleted: json['is_completed'],
     );
@@ -30,7 +32,7 @@ class Goal {
     return {
       'id': id,
       'account_id': accountId,
-      'target_amount': targetAmount,
+      'target_amount': targetAmount.toDatabaseValue(),
       'deadline': deadline.toIso8601String().split('T')[0],
       'is_completed': isCompleted,
     };
