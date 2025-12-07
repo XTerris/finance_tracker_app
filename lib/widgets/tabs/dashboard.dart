@@ -8,6 +8,7 @@ import '../../providers/account_provider.dart';
 import 'tab_widgets/transaction_plate.dart';
 import 'tab_base.dart';
 
+// Главная вкладка с обзором финансов и последними транзакциями
 class DashboardTab extends TabBase {
   const DashboardTab({super.key});
 
@@ -15,6 +16,7 @@ class DashboardTab extends TabBase {
   State<DashboardTab> createState() => _DashboardTabState();
 }
 
+// Класс для хранения статистики дашборда (доходы и расходы за месяц)
 class _DashboardStats {
   final double currentMonthExpenses;
   final double currentMonthIncome;
@@ -38,6 +40,7 @@ class _DashboardStats {
 }
 
 class _DashboardTabState extends State<DashboardTab> {
+  // Подсчет доходов и расходов за текущий месяц
   _DashboardStats _calculateDashboardStats(List<Transaction> transactions) {
     final now = DateTime.now();
     final currentMonthStart = DateTime(now.year, now.month, 1);
@@ -46,12 +49,14 @@ class _DashboardTabState extends State<DashboardTab> {
     double currentMonthIncome = 0.0;
 
     for (var transaction in transactions) {
+      // Расходы: есть счет списания, нет счета зачисления
       if (!transaction.doneAt.isBefore(currentMonthStart) &&
           transaction.fromAccountId != null &&
           transaction.toAccountId == null) {
         currentMonthExpenses += transaction.amount.abs();
       }
 
+      // Доходы: есть счет зачисления, нет счета списания
       if (!transaction.doneAt.isBefore(currentMonthStart) &&
           transaction.toAccountId != null &&
           transaction.fromAccountId == null) {
@@ -65,10 +70,12 @@ class _DashboardTabState extends State<DashboardTab> {
     );
   }
 
+  // Подсчет общего баланса всех счетов
   double _calculateTotalBalance(List<Account> accounts) {
     return accounts.fold(0.0, (sum, account) => sum + account.balance);
   }
 
+  // Приветствие в зависимости от времени суток
   String _getGreeting() {
     final hour = DateTime.now().hour;
 

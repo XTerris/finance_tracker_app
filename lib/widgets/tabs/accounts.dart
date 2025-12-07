@@ -7,6 +7,7 @@ import 'tab_widgets/account_plate.dart';
 import 'tab_widgets/add_account_bottom_sheet.dart';
 import 'tab_base.dart';
 
+// Вкладка для управления счетами и финансовыми целями
 class AccountsAndGoalsTab extends TabBase {
   const AccountsAndGoalsTab({super.key});
 
@@ -15,6 +16,7 @@ class AccountsAndGoalsTab extends TabBase {
 }
 
 class _AccountsAndGoalsTabState extends State<AccountsAndGoalsTab> {
+  // Форматирование баланса в российские рубли
   String _formatBalance(double balance) {
     final formatter = NumberFormat.currency(
       locale: 'ru_RU',
@@ -24,6 +26,7 @@ class _AccountsAndGoalsTabState extends State<AccountsAndGoalsTab> {
     return formatter.format(balance);
   }
 
+  // Открытие формы добавления нового счета
   void _showAddAccountBottomSheet() {
     showModalBottomSheet(
       context: context,

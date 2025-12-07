@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 
-/// Base class for all tab widgets in the application.
-/// 
-/// This abstract class serves as the foundation for DashboardTab, HistoryTab, 
-/// AccountsAndGoalsTab, and ReportsTab. It provides a common structure for 
-/// all tab implementations.
+// Базовый класс для всех вкладок приложения
+// Используется как основа для DashboardTab, HistoryTab, AccountsAndGoalsTab и ReportsTab
 abstract class TabBase extends StatefulWidget {
   const TabBase({super.key});
 }

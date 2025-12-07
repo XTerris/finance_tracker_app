@@ -14,10 +14,13 @@ import '../../providers/category_provider.dart';
 import '../../providers/account_provider.dart';
 import 'tab_base.dart';
 
+// Типы диаграмм для визуализации отчетов
 enum ChartType { none, bar, pie, line }
 
+// Режимы отображения в разделе отчетов
 enum ReportView { summary, chartSelection, chartView, forecast }
 
+// Вкладка отчетов с аналитикой и графиками
 class ReportsTab extends TabBase {
   const ReportsTab({super.key});
 
@@ -45,6 +48,7 @@ class _ReportsTabState extends State<ReportsTab> {
     return formatter.format(amount);
   }
 
+  // Выбор диапазона дат для формирования отчета
   Future<void> _selectDateRange() async {
     final DateTimeRange? picked = await showDateRangePicker(
       context: context,

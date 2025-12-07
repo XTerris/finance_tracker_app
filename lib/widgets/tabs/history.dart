@@ -9,11 +9,13 @@ import 'tab_widgets/transaction_plate.dart';
 import 'tab_widgets/add_transaction_bottom_sheet.dart';
 import 'tab_base.dart';
 
+// Типы транзакций для фильтрации
 enum TransactionType { income, expense, transfer }
 
 typedef FilterCallback =
     void Function(Set<int> categories, Set<TransactionType> types);
 
+// Вкладка истории транзакций с фильтрацией и поиском
 class HistoryTab extends TabBase {
   const HistoryTab({super.key});
 
@@ -33,6 +35,7 @@ class _HistoryTabState extends State<HistoryTab> {
     super.dispose();
   }
 
+  // Определение типа транзакции по счетам списания и зачисления
   TransactionType? _getTransactionType(Transaction transaction) {
     final hasFrom = transaction.fromAccountId != null;
     final hasTo = transaction.toAccountId != null;
@@ -47,6 +50,7 @@ class _HistoryTabState extends State<HistoryTab> {
     return null;
   }
 
+  // Фильтрация транзакций по поиску, категориям и типам
   List<Transaction> _filterTransactions(List<Transaction> transactions) {
     return transactions.where((transaction) {
       if (_searchQuery.isNotEmpty) {

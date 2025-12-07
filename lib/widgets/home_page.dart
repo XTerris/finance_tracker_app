@@ -6,6 +6,7 @@ import 'tabs/history.dart';
 import 'tabs/accounts.dart';
 import 'tabs/reports.dart';
 
+// Главная страница приложения с вкладками навигации
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -15,6 +16,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int _currentIndex = 0;
+  // Список вкладок приложения (используем PageStorageKey для сохранения состояния)
   final List<Widget> _tabs = [
     DashboardTab(key: PageStorageKey('dashboard_tab')),
     HistoryTab(key: PageStorageKey('history_tab')),
@@ -31,6 +33,7 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // IndexedStack сохраняет состояние неактивных вкладок
       body: SafeArea(
         child: IndexedStack(index: _currentIndex, children: _tabs),
       ),
@@ -51,6 +54,7 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
+// Кастомная панель навигации внизу экрана
 class NavigationBar extends StatelessWidget {
   const NavigationBar({
     super.key,
@@ -86,6 +90,7 @@ class NavigationBar extends StatelessWidget {
   }
 }
 
+// Настройка поведения скролла для всех типов устройств ввода
 class NoThumbScrollBehavior extends ScrollBehavior {
   @override
   Set<PointerDeviceKind> get dragDevices => {
