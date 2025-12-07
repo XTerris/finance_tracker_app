@@ -244,6 +244,9 @@ class _AddTransactionBottomSheetState
                   if (amount == null) {
                     return 'Пожалуйста, введите корректное число';
                   }
+                  if (amount <= 0) {
+                    return 'Сумма должна быть больше нуля';
+                  }
                   return null;
                 },
               ),

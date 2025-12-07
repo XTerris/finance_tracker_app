@@ -85,7 +85,7 @@ class DatabaseService {
 
   Database get _db {
     if (_database == null) {
-      throw Exception('Database not initialized. Call init() first.');
+      throw Exception('База данных не инициализирована. Сначала вызовите init().');
     }
     return _database!;
   }
@@ -120,6 +120,9 @@ class DatabaseService {
   }
 
   Future<Account> createAccount(String name, double initialBalance) async {
+    if (initialBalance < 0) {
+      throw Exception('Начальный баланс не может быть отрицательным');
+    }
     final id = await _db.insert(_accountTable, {
       'name': name,
       'balance': initialBalance,
@@ -139,7 +142,11 @@ class DatabaseService {
     );
 
     if (current.isEmpty) {
-      throw Exception('Account not found');
+      throw Exception('Счёт не найден');
+    }
+
+    if (balance != null && balance < 0) {
+      throw Exception('Баланс счёта не может быть отрицательным');
     }
 
     final Map<String, dynamic> updates = {};
@@ -202,7 +209,7 @@ class DatabaseService {
     );
 
     if (maps.isEmpty) {
-      throw Exception('Transaction not found');
+      throw Exception('Операция не найдена');
     }
 
     return models.Transaction(
@@ -224,6 +231,9 @@ class DatabaseService {
     int? fromAccountId,
     int? toAccountId,
   }) async {
+    if (amount <= 0) {
+      throw Exception('Сумма операции должна быть больше нуля');
+    }
     return await _db.transaction((txn) async {
       final id = await txn.insert(_transactionTable, {
         'title': title,
@@ -250,7 +260,7 @@ class DatabaseService {
         if (!isValid) {
           final accountName = await _getAccountName(txn, accountId);
           throw Exception(
-            'Transaction would cause account "$accountName" balance to become negative at some point in history. Transaction rejected.',
+            'Операция приведёт к отрицательному балансу счёта "$accountName" в какой-то момент времени. Операция отклонена.',
           );
         }
       }
@@ -279,6 +289,9 @@ class DatabaseService {
     int? categoryId,
     double? amount,
   }) async {
+    if (amount != null && amount <= 0) {
+      throw Exception('Сумма операции должна быть больше нуля');
+    }
     return await _db.transaction((txn) async {
       final currentTxnQuery = await txn.query(
         _transactionTable,
@@ -287,7 +300,7 @@ class DatabaseService {
       );
 
       if (currentTxnQuery.isEmpty) {
-        throw Exception('Transaction not found');
+        throw Exception('Операция не найдена');
       }
 
       final currentTxn = currentTxnQuery[0];
@@ -364,7 +377,7 @@ class DatabaseService {
       );
 
       if (txnQuery.isEmpty) {
-        throw Exception('Transaction not found');
+        throw Exception('Операция не найдена');
       }
 
       final transaction = txnQuery[0];
@@ -390,7 +403,7 @@ class DatabaseService {
         if (!isValid) {
           final accountName = await _getAccountName(txn, accountId);
           throw Exception(
-            'Deleting this transaction would cause account "$accountName" balance to become negative at some point in history. Deletion rejected.',
+            'Удаление операции приведёт к отрицательному балансу счёта "$accountName" в какой-то момент времени. Удаление отклонено.',
           );
         }
       }
@@ -437,7 +450,7 @@ class DatabaseService {
     );
 
     if (accountQuery.isEmpty) {
-      throw Exception('Account not found');
+      throw Exception('Счёт не найден');
     }
 
     final currentBalance = accountQuery[0]['balance'] as double;
@@ -508,6 +521,9 @@ class DatabaseService {
     required double targetAmount,
     required DateTime deadline,
   }) async {
+    if (targetAmount <= 0) {
+      throw Exception('Целевая сумма должна быть больше нуля');
+    }
     final id = await _db.insert(_goalTable, {
       'account_id': accountId,
       'target_amount': targetAmount,
@@ -537,6 +553,9 @@ class DatabaseService {
     DateTime? deadline,
     bool? isCompleted,
   }) async {
+    if (targetAmount != null && targetAmount <= 0) {
+      throw Exception('Целевая сумма должна быть больше нуля');
+    }
     final Map<String, dynamic> updates = {};
     if (accountId != null) updates['account_id'] = accountId;
     if (targetAmount != null) updates['target_amount'] = targetAmount;

@@ -100,6 +100,9 @@ class _AddAccountBottomSheetState
             if (balance == null) {
               return 'Пожалуйста, введите корректное число';
             }
+            if (balance < 0) {
+              return 'Начальный баланс не может быть отрицательным';
+            }
             return null;
           },
         ),
