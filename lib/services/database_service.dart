@@ -85,7 +85,7 @@ class DatabaseService {
 
   Database get _db {
     if (_database == null) {
-      throw Exception('Database not initialized. Call init() first.');
+      throw Exception('База данных не инициализирована. Сначала вызовите init().');
     }
     return _database!;
   }
@@ -142,7 +142,7 @@ class DatabaseService {
     );
 
     if (current.isEmpty) {
-      throw Exception('Account not found');
+      throw Exception('Счёт не найден');
     }
 
     if (balance != null && balance < 0) {
@@ -209,7 +209,7 @@ class DatabaseService {
     );
 
     if (maps.isEmpty) {
-      throw Exception('Transaction not found');
+      throw Exception('Операция не найдена');
     }
 
     return models.Transaction(
@@ -260,7 +260,7 @@ class DatabaseService {
         if (!isValid) {
           final accountName = await _getAccountName(txn, accountId);
           throw Exception(
-            'Transaction would cause account "$accountName" balance to become negative at some point in history. Transaction rejected.',
+            'Операция приведёт к отрицательному балансу счёта "$accountName" в какой-то момент времени. Операция отклонена.',
           );
         }
       }
@@ -300,7 +300,7 @@ class DatabaseService {
       );
 
       if (currentTxnQuery.isEmpty) {
-        throw Exception('Transaction not found');
+        throw Exception('Операция не найдена');
       }
 
       final currentTxn = currentTxnQuery[0];
@@ -377,7 +377,7 @@ class DatabaseService {
       );
 
       if (txnQuery.isEmpty) {
-        throw Exception('Transaction not found');
+        throw Exception('Операция не найдена');
       }
 
       final transaction = txnQuery[0];
@@ -403,7 +403,7 @@ class DatabaseService {
         if (!isValid) {
           final accountName = await _getAccountName(txn, accountId);
           throw Exception(
-            'Deleting this transaction would cause account "$accountName" balance to become negative at some point in history. Deletion rejected.',
+            'Удаление операции приведёт к отрицательному балансу счёта "$accountName" в какой-то момент времени. Удаление отклонено.',
           );
         }
       }
@@ -450,7 +450,7 @@ class DatabaseService {
     );
 
     if (accountQuery.isEmpty) {
-      throw Exception('Account not found');
+      throw Exception('Счёт не найден');
     }
 
     final currentBalance = accountQuery[0]['balance'] as double;
