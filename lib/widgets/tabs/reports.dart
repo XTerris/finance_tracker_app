@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:image/image.dart' as img;
+import 'dart:ui' as ui;
+import 'dart:io';
 import '../../providers/transaction_provider.dart';
 import '../../providers/category_provider.dart';
 import '../../providers/account_provider.dart';
@@ -22,6 +29,7 @@ class _ReportsTabState extends State<ReportsTab> {
   DateTime _endDate = DateTime.now();
   ReportView _currentView = ReportView.summary;
   ChartType _selectedChartType = ChartType.none;
+  final GlobalKey _chartKey = GlobalKey();
 
   String _formatDate(DateTime date) {
     return DateFormat('dd.MM.yyyy').format(date);
@@ -118,13 +126,131 @@ class _ReportsTabState extends State<ReportsTab> {
     );
   }
 
-  void _exportChartImage() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Экспорт диаграммы (функция в разработке)'),
-        duration: Duration(seconds: 2),
-      ),
-    );
+  String _getChartTypeName() {
+    switch (_selectedChartType) {
+      case ChartType.pie:
+        return 'pie';
+      case ChartType.bar:
+        return 'bar';
+      case ChartType.line:
+        return 'line';
+      case ChartType.none:
+        return 'unknown';
+    }
+  }
+
+  Future<String?> _getSaveDirectory() async {
+    if (kIsWeb) {
+      return null;
+    }
+
+    if (Platform.isAndroid) {
+      var status = await Permission.storage.status;
+      if (!status.isGranted) {
+        if (await Permission.photos.isGranted) {
+          status = PermissionStatus.granted;
+        } else if (await Permission.photos.request().isGranted) {
+          status = PermissionStatus.granted;
+        } else if (await Permission.storage.request().isGranted) {
+          status = PermissionStatus.granted;
+        }
+      }
+
+      if (!status.isGranted) {
+        throw Exception('Требуется разрешение на сохранение файлов');
+      }
+
+      final directory = await getExternalStorageDirectory();
+      if (directory == null) {
+        throw Exception('Не удалось получить доступ к хранилищу');
+      }
+
+      final parts = directory.path.split('/');
+      final storageIndex = parts.indexOf('Android');
+      if (storageIndex > 0) {
+        final basePath = parts.sublist(0, storageIndex).join('/');
+        final picturesPath = '$basePath/Pictures/Finance Tracker';
+        
+        final picturesDir = Directory(picturesPath);
+        if (!await picturesDir.exists()) {
+          await picturesDir.create(recursive: true);
+        }
+        
+        return picturesPath;
+      }
+      
+      return directory.path;
+    } else if (Platform.isIOS) {
+      final directory = await getApplicationDocumentsDirectory();
+      return directory.path;
+    } else {
+      final directory = await getApplicationDocumentsDirectory();
+      return directory.path;
+    }
+  }
+
+  void _exportChartImage() async {
+    try {
+      if (_selectedChartType == ChartType.none) {
+        throw Exception('Сначала выберите тип диаграммы');
+      }
+
+      final renderObject = _chartKey.currentContext?.findRenderObject();
+      if (renderObject is! RenderRepaintBoundary) {
+        throw Exception('Не удалось найти диаграмму для экспорта');
+      }
+
+      ui.Image image = await renderObject.toImage(pixelRatio: 3.0);
+      
+      var byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      if (byteData == null) {
+        throw Exception('Не удалось преобразовать изображение');
+      }
+
+      var pngBytes = byteData.buffer.asUint8List();
+      var decodedImage = img.decodeImage(pngBytes);
+      if (decodedImage == null) {
+        throw Exception('Не удалось декодировать изображение');
+      }
+
+      var jpegBytes = img.encodeJpg(decodedImage, quality: 90);
+
+      final directoryPath = await _getSaveDirectory();
+      if (directoryPath == null) {
+        throw Exception('Не удалось определить путь для сохранения');
+      }
+      
+      final timestamp = DateFormat('yyyy-MM-dd_HH-mm-ss').format(DateTime.now());
+      final chartTypeName = _getChartTypeName();
+      final fileName = 'chart_${chartTypeName}_$timestamp.jpg';
+      final filePath = '$directoryPath/$fileName';
+
+      final file = File(filePath);
+      await file.writeAsBytes(jpegBytes);
+
+      if (!mounted) return;
+      
+      final locationHint = Platform.isAndroid 
+          ? 'Pictures/Finance Tracker/$fileName'
+          : fileName;
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Диаграмма сохранена: $locationHint'),
+          duration: const Duration(seconds: 4),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Ошибка при сохранении: $e'),
+          duration: const Duration(seconds: 3),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   Widget _buildSummaryView() {
@@ -550,35 +676,38 @@ class _ReportsTabState extends State<ReportsTab> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.secondaryContainer,
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        _getChartTitle(),
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+                RepaintBoundary(
+                  key: _chartKey,
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.secondaryContainer,
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _getChartTitle(),
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                      if (chartData.isEmpty)
-                        const Text('Нет данных для отображения')
-                      else if (_selectedChartType == ChartType.line)
-                        _buildLineChart(chartData, chartDataRanges)
-                      else if (_selectedChartType == ChartType.bar)
-                        _buildBarChart(chartData, chartDataRanges)
-                      else if (_selectedChartType == ChartType.pie)
-                        _buildPieChart(chartData)
-                      else
-                        const Text('Неизвестный тип диаграммы'),
-                    ],
+                        const SizedBox(height: 16),
+                        if (chartData.isEmpty)
+                          const Text('Нет данных для отображения')
+                        else if (_selectedChartType == ChartType.line)
+                          _buildLineChart(chartData, chartDataRanges)
+                        else if (_selectedChartType == ChartType.bar)
+                          _buildBarChart(chartData, chartDataRanges)
+                        else if (_selectedChartType == ChartType.pie)
+                          _buildPieChart(chartData)
+                        else
+                          const Text('Неизвестный тип диаграммы'),
+                      ],
+                    ),
                   ),
                 ),
                 const SizedBox(height: 16),
