@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:finance_tracker_app/services/database_service.dart';
+import 'package:finance_tracker_app/models/money.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 void main() {
@@ -41,9 +42,9 @@ void main() {
     await DatabaseService.init();
     final dbService = DatabaseService();
 
-    final account = await dbService.createAccount('Test Account', 100.0);
+    final account = await dbService.createAccount('Test Account', Money.rub(100.0));
     expect(account.name, 'Test Account');
-    expect(account.balance, 100.0);
+    expect(account.balance.amount, 100.0);
 
     final accounts = await dbService.getAllAccounts();
     expect(accounts, isNotEmpty);
@@ -59,7 +60,7 @@ void main() {
 
     final transaction = await dbService.createTransaction(
       title: 'Test Transaction',
-      amount: 50.0,
+      amount: Money.rub(50.0),
       categoryId: category.id,
     );
 
