@@ -782,13 +782,13 @@ class _ReportsTabState extends State<ReportsTab> {
                 horizontalInterval: maxY > 0 ? maxY / 5 : 1,
                 getDrawingHorizontalLine: (value) {
                   return FlLine(
-                    color: Colors.grey.withOpacity(0.3),
+                    color: Colors.grey.withValues(alpha: 0.3),
                     strokeWidth: 1,
                   );
                 },
                 getDrawingVerticalLine: (value) {
                   return FlLine(
-                    color: Colors.grey.withOpacity(0.3),
+                    color: Colors.grey.withValues(alpha: 0.3),
                     strokeWidth: 1,
                   );
                 },
@@ -847,7 +847,7 @@ class _ReportsTabState extends State<ReportsTab> {
               ),
               borderData: FlBorderData(
                 show: true,
-                border: Border.all(color: Colors.grey.withOpacity(0.3)),
+                border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
               ),
               minX: 0,
               maxX: (spots.length - 1).toDouble(),
@@ -875,7 +875,7 @@ class _ReportsTabState extends State<ReportsTab> {
                     show: true,
                     color: Theme.of(
                       context,
-                    ).colorScheme.primary.withOpacity(0.1),
+                    ).colorScheme.primary.withValues(alpha: 0.1),
                   ),
                 ),
               ],
@@ -990,7 +990,7 @@ class _ReportsTabState extends State<ReportsTab> {
                 horizontalInterval: maxY > 0 ? maxY / 5 : 1,
                 getDrawingHorizontalLine: (value) {
                   return FlLine(
-                    color: Colors.grey.withOpacity(0.3),
+                    color: Colors.grey.withValues(alpha: 0.3),
                     strokeWidth: 1,
                   );
                 },
@@ -1048,7 +1048,7 @@ class _ReportsTabState extends State<ReportsTab> {
               ),
               borderData: FlBorderData(
                 show: true,
-                border: Border.all(color: Colors.grey.withOpacity(0.3)),
+                border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
               ),
               barGroups: barGroups,
               barTouchData: BarTouchData(

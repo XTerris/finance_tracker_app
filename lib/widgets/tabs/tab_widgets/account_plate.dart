@@ -191,7 +191,7 @@ class AccountPlate extends PlateBase {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface.withOpacity(0.5),
+            color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.5),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Text(
@@ -220,12 +220,12 @@ class AccountPlate extends PlateBase {
                     decoration: BoxDecoration(
                       color: Theme.of(
                         context,
-                      ).colorScheme.surface.withOpacity(0.3),
+                      ).colorScheme.surface.withValues(alpha: 0.3),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color: Theme.of(
                           context,
-                        ).colorScheme.outline.withOpacity(0.3),
+                        ).colorScheme.outline.withValues(alpha: 0.3),
                       ),
                     ),
                     child: Row(
@@ -278,7 +278,7 @@ class AccountPlate extends PlateBase {
                   decoration: BoxDecoration(
                     color: Theme.of(
                       context,
-                    ).colorScheme.surface.withOpacity(0.3),
+                    ).colorScheme.surface.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Column(
@@ -468,8 +468,8 @@ class AccountPlate extends PlateBase {
                             decoration: BoxDecoration(
                               color:
                                   goal.isCompleted
-                                      ? Colors.orange.withOpacity(0.1)
-                                      : Colors.green.withOpacity(0.1),
+                                      ? Colors.orange.withValues(alpha: 0.1)
+                                      : Colors.green.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: IconButton(
@@ -498,7 +498,7 @@ class AccountPlate extends PlateBase {
                           const SizedBox(width: 8),
                           Container(
                             decoration: BoxDecoration(
-                              color: Colors.red.withOpacity(0.1),
+                              color: Colors.red.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: IconButton(
@@ -549,7 +549,7 @@ class AccountPlate extends PlateBase {
             const SizedBox(width: 8),
             Container(
               decoration: BoxDecoration(
-                color: Colors.red.withOpacity(0.1),
+                color: Colors.red.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: IconButton(

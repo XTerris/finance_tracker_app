@@ -166,7 +166,7 @@ class _HistoryTabState extends State<HistoryTab> {
                           border: Border.all(
                             color: Theme.of(
                               context,
-                            ).colorScheme.outline.withOpacity(0.3),
+                            ).colorScheme.outline.withValues(alpha: 0.3),
                           ),
                         ),
                         child: Stack(
@@ -422,13 +422,13 @@ class _FilterDialogState extends State<_FilterDialog> {
                             decoration: BoxDecoration(
                               color:
                                   isSelected
-                                      ? _getTypeColor(type).withOpacity(0.1)
+                                      ? _getTypeColor(type).withValues(alpha: 0.1)
                                       : Colors.transparent,
                               border: Border.all(
                                 color:
                                     isSelected
                                         ? _getTypeColor(type)
-                                        : Colors.grey.withOpacity(0.3),
+                                        : Colors.grey.withValues(alpha: 0.3),
                                 width: isSelected ? 2 : 1,
                               ),
                               borderRadius: BorderRadius.circular(12),
@@ -520,7 +520,7 @@ class _FilterDialogState extends State<_FilterDialog> {
                                           ? Theme.of(
                                             context,
                                           ).colorScheme.primary
-                                          : Colors.grey.withOpacity(0.3),
+                                          : Colors.grey.withValues(alpha: 0.3),
                                   width: isSelected ? 2 : 1,
                                 ),
                                 borderRadius: BorderRadius.circular(12),
@@ -577,7 +577,7 @@ class _FilterDialogState extends State<_FilterDialog> {
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 10,
                     offset: Offset(0, -2),
                   ),
