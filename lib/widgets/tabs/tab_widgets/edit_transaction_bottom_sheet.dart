@@ -5,8 +5,9 @@ import '../../../providers/transaction_provider.dart';
 import '../../../providers/category_provider.dart';
 import '../../../providers/account_provider.dart';
 import '../../../providers/goal_provider.dart';
+import 'add_bottom_sheet_base.dart';
 
-class EditTransactionBottomSheet extends StatefulWidget {
+class EditTransactionBottomSheet extends AddBottomSheetBase {
   final Transaction transaction;
 
   const EditTransactionBottomSheet({super.key, required this.transaction});
@@ -17,13 +18,11 @@ class EditTransactionBottomSheet extends StatefulWidget {
 }
 
 class _EditTransactionBottomSheetState
-    extends State<EditTransactionBottomSheet> {
-  final _formKey = GlobalKey<FormState>();
+    extends AddBottomSheetBaseState<EditTransactionBottomSheet> {
   late final TextEditingController _titleController;
   late final TextEditingController _amountController;
 
   int? _selectedCategoryId;
-  bool _isLoading = false;
 
   @override
   void initState() {
@@ -110,19 +109,18 @@ class _EditTransactionBottomSheetState
     categoryNameController.dispose();
   }
 
-  Future<void> _submitForm() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
+  @override
+  String get title => 'Изменить операцию';
 
+  @override
+  String get submitButtonText => 'Сохранить изменения';
+
+  @override
+  Future<void> submitForm() async {
     if (_selectedCategoryId == null) {
-      _showSnackBar('Пожалуйста, выберите категорию');
+      showSnackBar('Пожалуйста, выберите категорию');
       return;
     }
-
-    setState(() {
-      _isLoading = true;
-    });
 
     final navigator = Navigator.of(context);
 
@@ -159,71 +157,18 @@ class _EditTransactionBottomSheetState
           ),
         );
       }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
-  }
-
-  void _showSnackBar(String message, {bool isError = false}) {
-    final scaffoldContext =
-        context.findAncestorStateOfType<ScaffoldState>()?.context;
-    if (scaffoldContext != null) {
-      ScaffoldMessenger.of(scaffoldContext).showSnackBar(
-        SnackBar(
-          content: Text(message),
-          backgroundColor: isError ? Colors.red : null,
-        ),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(message),
-          backgroundColor: isError ? Colors.red : null,
-        ),
-      );
     }
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget buildFormContent(BuildContext context) {
     final categoryProvider = context.watch<CategoryProvider>();
 
-    return Container(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-        left: 16,
-        right: 16,
-        top: 16,
-      ),
-      child: SingleChildScrollView(
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Изменить операцию',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => Navigator.of(context).pop(),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-
-              TextFormField(
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        TextFormField(
                 controller: _titleController,
                 decoration: const InputDecoration(
                   labelText: 'Название',
@@ -309,27 +254,7 @@ class _EditTransactionBottomSheetState
                   return null;
                 },
               ),
-              const SizedBox(height: 24),
-
-              ElevatedButton(
-                onPressed: _isLoading ? null : _submitForm,
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
-                child:
-                    _isLoading
-                        ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                        : const Text('Сохранить изменения'),
-              ),
-              const SizedBox(height: 16),
             ],
-          ),
-        ),
-      ),
-    );
-  }
-}
+          );
+        }
+      }

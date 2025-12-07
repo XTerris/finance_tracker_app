@@ -3,8 +3,9 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../../models/goal.dart';
 import '../../../providers/goal_provider.dart';
+import 'add_bottom_sheet_base.dart';
 
-class EditGoalBottomSheet extends StatefulWidget {
+class EditGoalBottomSheet extends AddBottomSheetBase {
   final Goal goal;
 
   const EditGoalBottomSheet({super.key, required this.goal});
@@ -13,12 +14,10 @@ class EditGoalBottomSheet extends StatefulWidget {
   State<EditGoalBottomSheet> createState() => _EditGoalBottomSheetState();
 }
 
-class _EditGoalBottomSheetState extends State<EditGoalBottomSheet> {
-  final _formKey = GlobalKey<FormState>();
+class _EditGoalBottomSheetState
+    extends AddBottomSheetBaseState<EditGoalBottomSheet> {
   late final TextEditingController _targetAmountController;
   late DateTime _selectedDeadline;
-
-  bool _isLoading = false;
 
   @override
   void initState() {
@@ -49,15 +48,14 @@ class _EditGoalBottomSheetState extends State<EditGoalBottomSheet> {
     }
   }
 
-  Future<void> _submitForm() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
+  @override
+  String get title => 'Изменить цель';
 
-    setState(() {
-      _isLoading = true;
-    });
+  @override
+  String get submitButtonText => 'Сохранить изменения';
 
+  @override
+  Future<void> submitForm() async {
     final navigator = Navigator.of(context);
 
     try {
@@ -85,107 +83,53 @@ class _EditGoalBottomSheetState extends State<EditGoalBottomSheet> {
           ),
         );
       }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
     }
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-        left: 16,
-        right: 16,
-        top: 16,
-      ),
-      child: SingleChildScrollView(
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Изменить цель',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => Navigator.of(context).pop(),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-
-              TextFormField(
-                controller: _targetAmountController,
-                decoration: const InputDecoration(
-                  labelText: 'Целевая сумма',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.onetwothree),
-                  suffixText: '₽',
-                ),
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Пожалуйста, введите целевую сумму';
-                  }
-                  final amount = double.tryParse(value.trim());
-                  if (amount == null) {
-                    return 'Пожалуйста, введите корректное число';
-                  }
-                  if (amount <= 0) {
-                    return 'Сумма должна быть больше нуля';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-
-              OutlinedButton.icon(
-                onPressed: () => _selectDate(context),
-                icon: const Icon(Icons.calendar_today),
-                label: Text(
-                  'Дедлайн: ${DateFormat('dd.MM.yyyy').format(_selectedDeadline)}',
-                ),
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.all(16),
-                  alignment: Alignment.centerLeft,
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              ElevatedButton(
-                onPressed: _isLoading ? null : _submitForm,
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
-                child:
-                    _isLoading
-                        ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                        : const Text('Сохранить изменения'),
-              ),
-              const SizedBox(height: 16),
-            ],
+  Widget buildFormContent(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        TextFormField(
+          controller: _targetAmountController,
+          decoration: const InputDecoration(
+            labelText: 'Целевая сумма',
+            border: OutlineInputBorder(),
+            prefixIcon: Icon(Icons.onetwothree),
+            suffixText: '₽',
+          ),
+          keyboardType: const TextInputType.numberWithOptions(
+            decimal: true,
+          ),
+          validator: (value) {
+            if (value == null || value.trim().isEmpty) {
+              return 'Пожалуйста, введите целевую сумму';
+            }
+            final amount = double.tryParse(value.trim());
+            if (amount == null) {
+              return 'Пожалуйста, введите корректное число';
+            }
+            if (amount <= 0) {
+              return 'Сумма должна быть больше нуля';
+            }
+            return null;
+          },
+        ),
+        const SizedBox(height: 16),
+        OutlinedButton.icon(
+          onPressed: () => _selectDate(context),
+          icon: const Icon(Icons.calendar_today),
+          label: Text(
+            'Дедлайн: ${DateFormat('dd.MM.yyyy').format(_selectedDeadline)}',
+          ),
+          style: OutlinedButton.styleFrom(
+            padding: const EdgeInsets.all(16),
+            alignment: Alignment.centerLeft,
           ),
         ),
-      ),
+      ],
     );
   }
 }

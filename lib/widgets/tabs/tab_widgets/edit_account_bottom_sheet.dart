@@ -3,8 +3,9 @@ import 'package:provider/provider.dart';
 import '../../../models/account.dart';
 import '../../../providers/account_provider.dart';
 import '../../../providers/goal_provider.dart';
+import 'add_bottom_sheet_base.dart';
 
-class EditAccountBottomSheet extends StatefulWidget {
+class EditAccountBottomSheet extends AddBottomSheetBase {
   final Account account;
 
   const EditAccountBottomSheet({super.key, required this.account});
@@ -13,12 +14,10 @@ class EditAccountBottomSheet extends StatefulWidget {
   State<EditAccountBottomSheet> createState() => _EditAccountBottomSheetState();
 }
 
-class _EditAccountBottomSheetState extends State<EditAccountBottomSheet> {
-  final _formKey = GlobalKey<FormState>();
+class _EditAccountBottomSheetState
+    extends AddBottomSheetBaseState<EditAccountBottomSheet> {
   late final TextEditingController _nameController;
   late final TextEditingController _balanceController;
-
-  bool _isLoading = false;
 
   @override
   void initState() {
@@ -36,15 +35,14 @@ class _EditAccountBottomSheetState extends State<EditAccountBottomSheet> {
     super.dispose();
   }
 
-  Future<void> _submitForm() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
+  @override
+  String get title => 'Изменить счёт';
 
-    setState(() {
-      _isLoading = true;
-    });
+  @override
+  String get submitButtonText => 'Сохранить изменения';
 
+  @override
+  Future<void> submitForm() async {
     final navigator = Navigator.of(context);
 
     try {
@@ -75,107 +73,53 @@ class _EditAccountBottomSheetState extends State<EditAccountBottomSheet> {
           ),
         );
       }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
     }
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-        left: 16,
-        right: 16,
-        top: 16,
-      ),
-      child: SingleChildScrollView(
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Изменить счёт',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => Navigator.of(context).pop(),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-
-              TextFormField(
-                controller: _nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Название счёта',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.account_balance_wallet),
-                ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Пожалуйста, введите название';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-
-              TextFormField(
-                controller: _balanceController,
-                decoration: const InputDecoration(
-                  labelText: 'Баланс',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.onetwothree),
-                  suffixText: '₽',
-                ),
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Пожалуйста, введите баланс';
-                  }
-                  final balance = double.tryParse(value.trim());
-                  if (balance == null) {
-                    return 'Пожалуйста, введите корректное число';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 24),
-
-              ElevatedButton(
-                onPressed: _isLoading ? null : _submitForm,
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
-                child:
-                    _isLoading
-                        ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                        : const Text('Сохранить изменения'),
-              ),
-              const SizedBox(height: 16),
-            ],
+  Widget buildFormContent(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        TextFormField(
+          controller: _nameController,
+          decoration: const InputDecoration(
+            labelText: 'Название счёта',
+            border: OutlineInputBorder(),
+            prefixIcon: Icon(Icons.account_balance_wallet),
           ),
+          validator: (value) {
+            if (value == null || value.trim().isEmpty) {
+              return 'Пожалуйста, введите название';
+            }
+            return null;
+          },
         ),
-      ),
+        const SizedBox(height: 16),
+        TextFormField(
+          controller: _balanceController,
+          decoration: const InputDecoration(
+            labelText: 'Баланс',
+            border: OutlineInputBorder(),
+            prefixIcon: Icon(Icons.onetwothree),
+            suffixText: '₽',
+          ),
+          keyboardType: const TextInputType.numberWithOptions(
+            decimal: true,
+          ),
+          validator: (value) {
+            if (value == null || value.trim().isEmpty) {
+              return 'Пожалуйста, введите баланс';
+            }
+            final balance = double.tryParse(value.trim());
+            if (balance == null) {
+              return 'Пожалуйста, введите корректное число';
+            }
+            return null;
+          },
+        ),
+      ],
     );
   }
 }

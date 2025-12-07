@@ -2,20 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/account_provider.dart';
 import '../../../providers/goal_provider.dart';
+import 'add_bottom_sheet_base.dart';
 
-class AddAccountBottomSheet extends StatefulWidget {
+class AddAccountBottomSheet extends AddBottomSheetBase {
   const AddAccountBottomSheet({super.key});
 
   @override
   State<AddAccountBottomSheet> createState() => _AddAccountBottomSheetState();
 }
 
-class _AddAccountBottomSheetState extends State<AddAccountBottomSheet> {
-  final _formKey = GlobalKey<FormState>();
+class _AddAccountBottomSheetState
+    extends AddBottomSheetBaseState<AddAccountBottomSheet> {
   final _nameController = TextEditingController();
   final _balanceController = TextEditingController();
-
-  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -24,15 +23,14 @@ class _AddAccountBottomSheetState extends State<AddAccountBottomSheet> {
     super.dispose();
   }
 
-  Future<void> _submitForm() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
+  @override
+  String get title => 'Создать счёт';
 
-    setState(() {
-      _isLoading = true;
-    });
+  @override
+  String get submitButtonText => 'Создать счёт';
 
+  @override
+  Future<void> submitForm() async {
     try {
       final accountProvider = context.read<AccountProvider>();
       final goalProvider = context.read<GoalProvider>();
@@ -60,106 +58,52 @@ class _AddAccountBottomSheetState extends State<AddAccountBottomSheet> {
           ),
         );
       }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
     }
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-        left: 16,
-        right: 16,
-        top: 16,
-      ),
-      child: SingleChildScrollView(
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Создать счёт',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => Navigator.of(context).pop(),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-
-              TextFormField(
-                controller: _nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Название счёта',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.account_balance),
-                ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Пожалуйста, введите название счёта';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-
-              TextFormField(
-                controller: _balanceController,
-                decoration: const InputDecoration(
-                  labelText: 'Начальный баланс',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.onetwothree),
-                ),
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Пожалуйста, введите начальный баланс';
-                  }
-                  final balance = double.tryParse(value.trim());
-                  if (balance == null) {
-                    return 'Пожалуйста, введите корректное число';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 24),
-
-              ElevatedButton(
-                onPressed: _isLoading ? null : _submitForm,
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
-                child:
-                    _isLoading
-                        ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                        : const Text('Создать счёт'),
-              ),
-              const SizedBox(height: 16),
-            ],
+  Widget buildFormContent(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        TextFormField(
+          controller: _nameController,
+          decoration: const InputDecoration(
+            labelText: 'Название счёта',
+            border: OutlineInputBorder(),
+            prefixIcon: Icon(Icons.account_balance),
           ),
+          validator: (value) {
+            if (value == null || value.trim().isEmpty) {
+              return 'Пожалуйста, введите название счёта';
+            }
+            return null;
+          },
         ),
-      ),
+        const SizedBox(height: 16),
+        TextFormField(
+          controller: _balanceController,
+          decoration: const InputDecoration(
+            labelText: 'Начальный баланс',
+            border: OutlineInputBorder(),
+            prefixIcon: Icon(Icons.onetwothree),
+          ),
+          keyboardType: const TextInputType.numberWithOptions(
+            decimal: true,
+          ),
+          validator: (value) {
+            if (value == null || value.trim().isEmpty) {
+              return 'Пожалуйста, введите начальный баланс';
+            }
+            final balance = double.tryParse(value.trim());
+            if (balance == null) {
+              return 'Пожалуйста, введите корректное число';
+            }
+            return null;
+          },
+        ),
+      ],
     );
   }
 }
