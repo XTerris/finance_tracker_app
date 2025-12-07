@@ -5,10 +5,11 @@ import '../../../providers/transaction_provider.dart';
 import '../../../providers/category_provider.dart';
 import '../../../providers/account_provider.dart';
 import '../../../providers/goal_provider.dart';
+import 'add_bottom_sheet_base.dart';
 
 enum TransactionType { expense, income, transfer }
 
-class AddTransactionBottomSheet extends StatefulWidget {
+class AddTransactionBottomSheet extends AddBottomSheetBase {
   const AddTransactionBottomSheet({super.key});
 
   @override
@@ -16,8 +17,8 @@ class AddTransactionBottomSheet extends StatefulWidget {
       _AddTransactionBottomSheetState();
 }
 
-class _AddTransactionBottomSheetState extends State<AddTransactionBottomSheet> {
-  final _formKey = GlobalKey<FormState>();
+class _AddTransactionBottomSheetState
+    extends AddBottomSheetBaseState<AddTransactionBottomSheet> {
   final _titleController = TextEditingController();
   final _amountController = TextEditingController();
 
@@ -26,7 +27,6 @@ class _AddTransactionBottomSheetState extends State<AddTransactionBottomSheet> {
   int? _selectedFromAccountId;
   int? _selectedToAccountId;
   DateTime _selectedDate = DateTime.now();
-  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -135,34 +135,33 @@ class _AddTransactionBottomSheetState extends State<AddTransactionBottomSheet> {
     categoryNameController.dispose();
   }
 
-  Future<void> _submitForm() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
+  @override
+  String get title => 'Добавить операцию';
 
+  @override
+  String get submitButtonText => 'Добавить операцию';
+
+  @override
+  Future<void> submitForm() async {
     if (_selectedCategoryId == null) {
-      _showSnackBar('Пожалуйста, выберите категорию');
+      showSnackBar('Пожалуйста, выберите категорию');
       return;
     }
 
     if (_transactionType == TransactionType.expense ||
         _transactionType == TransactionType.transfer) {
       if (_selectedFromAccountId == null) {
-        _showSnackBar('Пожалуйста, выберите счет отправления');
+        showSnackBar('Пожалуйста, выберите счет отправления');
         return;
       }
     }
     if (_transactionType == TransactionType.income ||
         _transactionType == TransactionType.transfer) {
       if (_selectedToAccountId == null) {
-        _showSnackBar('Пожалуйста, выберите счет назначения');
+        showSnackBar('Пожалуйста, выберите счет назначения');
         return;
       }
     }
-
-    setState(() {
-      _isLoading = true;
-    });
 
     final navigator = Navigator.of(context);
 
@@ -199,72 +198,19 @@ class _AddTransactionBottomSheetState extends State<AddTransactionBottomSheet> {
           ),
         );
       }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
-  }
-
-  void _showSnackBar(String message, {bool isError = false}) {
-    final scaffoldContext =
-        context.findAncestorStateOfType<ScaffoldState>()?.context;
-    if (scaffoldContext != null) {
-      ScaffoldMessenger.of(scaffoldContext).showSnackBar(
-        SnackBar(
-          content: Text(message),
-          backgroundColor: isError ? Colors.red : null,
-        ),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(message),
-          backgroundColor: isError ? Colors.red : null,
-        ),
-      );
     }
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget buildFormContent(BuildContext context) {
     final categoryProvider = context.watch<CategoryProvider>();
     final accountProvider = context.watch<AccountProvider>();
 
-    return Container(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-        left: 16,
-        right: 16,
-        top: 16,
-      ),
-      child: SingleChildScrollView(
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Добавить операцию',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => Navigator.of(context).pop(),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-
-              TextFormField(
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        TextFormField(
                 controller: _titleController,
                 decoration: const InputDecoration(
                   labelText: 'Название',
@@ -498,27 +444,7 @@ class _AddTransactionBottomSheetState extends State<AddTransactionBottomSheet> {
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
-
-              ElevatedButton(
-                onPressed: _isLoading ? null : _submitForm,
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
-                child:
-                    _isLoading
-                        ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                        : const Text('Добавить операцию'),
-              ),
-              const SizedBox(height: 16),
             ],
-          ),
-        ),
-      ),
-    );
-  }
-}
+          );
+        }
+      }

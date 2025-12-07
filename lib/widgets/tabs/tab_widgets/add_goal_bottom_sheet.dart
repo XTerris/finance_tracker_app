@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/goal_provider.dart';
 import '../../../models/account.dart';
+import 'add_bottom_sheet_base.dart';
 
-class AddGoalBottomSheet extends StatefulWidget {
+class AddGoalBottomSheet extends AddBottomSheetBase {
   final Account account;
 
   const AddGoalBottomSheet({super.key, required this.account});
@@ -12,12 +13,10 @@ class AddGoalBottomSheet extends StatefulWidget {
   State<AddGoalBottomSheet> createState() => _AddGoalBottomSheetState();
 }
 
-class _AddGoalBottomSheetState extends State<AddGoalBottomSheet> {
-  final _formKey = GlobalKey<FormState>();
+class _AddGoalBottomSheetState
+    extends AddBottomSheetBaseState<AddGoalBottomSheet> {
   final _targetAmountController = TextEditingController();
   DateTime? _selectedDeadline;
-
-  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -40,11 +39,18 @@ class _AddGoalBottomSheetState extends State<AddGoalBottomSheet> {
     }
   }
 
-  Future<void> _submitForm() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
+  String _formatDate(DateTime date) {
+    return '${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year}';
+  }
 
+  @override
+  String get title => 'Создать цель';
+
+  @override
+  String get submitButtonText => 'Создать цель';
+
+  @override
+  Future<void> submitForm() async {
     if (_selectedDeadline == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -54,10 +60,6 @@ class _AddGoalBottomSheetState extends State<AddGoalBottomSheet> {
       );
       return;
     }
-
-    setState(() {
-      _isLoading = true;
-    });
 
     try {
       final goalProvider = context.read<GoalProvider>();
@@ -84,17 +86,61 @@ class _AddGoalBottomSheetState extends State<AddGoalBottomSheet> {
           ),
         );
       }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
     }
   }
 
-  String _formatDate(DateTime date) {
-    return '${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year}';
+  @override
+  Widget buildFormContent(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        TextFormField(
+          controller: _targetAmountController,
+          decoration: const InputDecoration(
+            labelText: 'Целевая сумма',
+            border: OutlineInputBorder(),
+            prefixIcon: Icon(Icons.onetwothree),
+            suffixText: '₽',
+          ),
+          keyboardType: const TextInputType.numberWithOptions(
+            decimal: true,
+          ),
+          validator: (value) {
+            if (value == null || value.trim().isEmpty) {
+              return 'Пожалуйста, введите целевую сумму';
+            }
+            final amount = double.tryParse(value.trim());
+            if (amount == null) {
+              return 'Пожалуйста, введите корректное число';
+            }
+            if (amount <= 0) {
+              return 'Сумма должна быть больше нуля';
+            }
+            return null;
+          },
+        ),
+        const SizedBox(height: 16),
+        InkWell(
+          onTap: _selectDate,
+          child: InputDecorator(
+            decoration: const InputDecoration(
+              labelText: 'Дедлайн',
+              border: OutlineInputBorder(),
+              prefixIcon: Icon(Icons.calendar_today),
+            ),
+            child: Text(
+              _selectedDeadline == null
+                  ? 'Выберите дату'
+                  : _formatDate(_selectedDeadline!),
+              style: TextStyle(
+                color: _selectedDeadline == null ? Colors.grey[600] : null,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
   }
 
   @override
@@ -108,7 +154,7 @@ class _AddGoalBottomSheetState extends State<AddGoalBottomSheet> {
       ),
       child: SingleChildScrollView(
         child: Form(
-          key: _formKey,
+          key: formKey,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -121,13 +167,17 @@ class _AddGoalBottomSheetState extends State<AddGoalBottomSheet> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Создать цель',
-                          style: Theme.of(context).textTheme.titleLarge
+                          title,
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleLarge
                               ?.copyWith(fontWeight: FontWeight.bold),
                         ),
                         Text(
                           'для счёта: ${widget.account.name}',
-                          style: Theme.of(context).textTheme.bodyMedium
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
                               ?.copyWith(color: Colors.grey[600]),
                         ),
                       ],
@@ -140,68 +190,20 @@ class _AddGoalBottomSheetState extends State<AddGoalBottomSheet> {
                 ],
               ),
               const SizedBox(height: 16),
-
-              TextFormField(
-                controller: _targetAmountController,
-                decoration: const InputDecoration(
-                  labelText: 'Целевая сумма',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.onetwothree),
-                  suffixText: '₽',
-                ),
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Пожалуйста, введите целевую сумму';
-                  }
-                  final amount = double.tryParse(value.trim());
-                  if (amount == null) {
-                    return 'Пожалуйста, введите корректное число';
-                  }
-                  if (amount <= 0) {
-                    return 'Сумма должна быть больше нуля';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-
-              InkWell(
-                onTap: _selectDate,
-                child: InputDecorator(
-                  decoration: const InputDecoration(
-                    labelText: 'Дедлайн',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.calendar_today),
-                  ),
-                  child: Text(
-                    _selectedDeadline == null
-                        ? 'Выберите дату'
-                        : _formatDate(_selectedDeadline!),
-                    style: TextStyle(
-                      color:
-                          _selectedDeadline == null ? Colors.grey[600] : null,
-                    ),
-                  ),
-                ),
-              ),
+              buildFormContent(context),
               const SizedBox(height: 24),
-
               ElevatedButton(
-                onPressed: _isLoading ? null : _submitForm,
+                onPressed: isLoading ? null : handleSubmit,
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
-                child:
-                    _isLoading
-                        ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                        : const Text('Создать цель'),
+                child: isLoading
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : Text(submitButtonText),
               ),
               const SizedBox(height: 16),
             ],
