@@ -6,14 +6,14 @@ import 'package:provider/provider.dart';
 import 'tab_widgets/account_plate.dart';
 import 'tab_widgets/add_account_bottom_sheet.dart';
 
-class GoalsTab extends StatefulWidget {
-  const GoalsTab({super.key});
+class AccountsAndGoalsTab extends StatefulWidget {
+  const AccountsAndGoalsTab({super.key});
 
   @override
-  State<GoalsTab> createState() => _GoalsTabState();
+  State<AccountsAndGoalsTab> createState() => _AccountsAndGoalsTabState();
 }
 
-class _GoalsTabState extends State<GoalsTab> {
+class _AccountsAndGoalsTabState extends State<AccountsAndGoalsTab> {
   String _formatBalance(double balance) {
     final formatter = NumberFormat.currency(
       locale: 'ru_RU',

@@ -18,7 +18,7 @@ class _HomePageState extends State<HomePage> {
   final List<Widget> _tabs = [
     DashboardTab(key: PageStorageKey('dashboard_tab')),
     HistoryTab(key: PageStorageKey('history_tab')),
-    GoalsTab(key: PageStorageKey('goals_tab')),
+    AccountsAndGoalsTab(key: PageStorageKey('goals_tab')),
     ReportsTab(key: PageStorageKey('reports_tab')),
   ];
 
