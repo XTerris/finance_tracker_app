@@ -8,11 +8,11 @@ import '../../../providers/account_provider.dart';
 import '../../../providers/category_provider.dart';
 import '../../../providers/goal_provider.dart';
 import 'edit_transaction_bottom_sheet.dart';
+import 'plate_base.dart';
 
-class TransactionPlate extends StatelessWidget {
+class TransactionPlate extends PlateBase {
   final Transaction transaction;
-  final EdgeInsetsGeometry? margin;
-  const TransactionPlate({super.key, required this.transaction, this.margin});
+  const TransactionPlate({super.key, required this.transaction, super.margin});
 
   String _getAccountName(AccountProvider accountProvider, int? accountId) {
     if (accountId == null) return '—';
@@ -126,7 +126,7 @@ class TransactionPlate extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget buildContent(BuildContext context) {
     final accountProvider = context.watch<AccountProvider>();
     final categoryProvider = context.watch<CategoryProvider>();
 
@@ -152,22 +152,7 @@ class TransactionPlate extends StatelessWidget {
 
     final dateFormat = DateFormat('dd.MM.yyyy HH:mm');
 
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(16),
-      margin: margin ?? EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.secondaryContainer,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
+    return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(

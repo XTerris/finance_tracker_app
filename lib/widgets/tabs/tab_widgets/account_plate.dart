@@ -8,11 +8,11 @@ import '../../../models/account.dart';
 import 'add_goal_bottom_sheet.dart';
 import 'edit_account_bottom_sheet.dart';
 import 'edit_goal_bottom_sheet.dart';
+import 'plate_base.dart';
 
-class AccountPlate extends StatelessWidget {
+class AccountPlate extends PlateBase {
   final Account account;
-  final EdgeInsetsGeometry? margin;
-  const AccountPlate({super.key, required this.account, this.margin});
+  const AccountPlate({super.key, required this.account, super.margin});
 
   String _formatBalance(double balance) {
     final formatter = NumberFormat.currency(
@@ -163,23 +163,8 @@ class AccountPlate extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      margin: margin ?? const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.secondaryContainer,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
+  Widget buildContent(BuildContext context) {
+    return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
