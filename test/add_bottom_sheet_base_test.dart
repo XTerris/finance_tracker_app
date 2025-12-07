@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:finance_tracker_app/widgets/tabs/tab_widgets/add_bottom_sheet_base.dart';
 
-// Простой тестовый виджет, наследующий AddBottomSheetBase
+// Simple test widget extending AddBottomSheetBase
 class TestBottomSheet extends AddBottomSheetBase {
   const TestBottomSheet({super.key});
 
@@ -19,7 +19,7 @@ class _TestBottomSheetState extends AddBottomSheetBaseState<TestBottomSheet> {
 
   @override
   Future<void> submitForm() async {
-    // Простая реализация для теста
+    // Simple implementation for testing
     await Future.delayed(const Duration(milliseconds: 100));
     if (mounted) {
       Navigator.of(context).pop('success');
@@ -66,17 +66,17 @@ void main() {
         ),
       );
 
-      // Открываем bottom sheet
+      // Open the bottom sheet
       await tester.tap(find.text('Open'));
       await tester.pumpAndSettle();
 
-      // Проверяем, что заголовок отображается
+      // Verify title is displayed
       expect(find.text('Test Title'), findsOneWidget);
 
-      // Проверяем, что кнопка закрытия отображается
+      // Verify close button is displayed
       expect(find.byIcon(Icons.close), findsOneWidget);
 
-      // Проверяем, что кнопка отправки отображается
+      // Verify submit button is displayed
       expect(find.text('Submit Test'), findsOneWidget);
     });
 
@@ -102,7 +102,7 @@ void main() {
       await tester.tap(find.text('Open'));
       await tester.pumpAndSettle();
 
-      // Проверяем, что контент формы отображается
+      // Verify form content is displayed
       expect(find.text('Test Field'), findsOneWidget);
     });
 
@@ -129,14 +129,14 @@ void main() {
       await tester.tap(find.text('Open'));
       await tester.pumpAndSettle();
 
-      // Проверяем, что bottom sheet открыт
+      // Verify bottom sheet is open
       expect(find.text('Test Title'), findsOneWidget);
 
-      // Нажимаем кнопку закрытия
+      // Tap the close button
       await tester.tap(find.byIcon(Icons.close));
       await tester.pumpAndSettle();
 
-      // Проверяем, что bottom sheet закрыт
+      // Verify bottom sheet is closed
       expect(find.text('Test Title'), findsNothing);
     });
 
@@ -163,14 +163,14 @@ void main() {
       await tester.tap(find.text('Open'));
       await tester.pumpAndSettle();
 
-      // Пытаемся отправить форму без заполнения
+      // Try to submit form without filling it
       await tester.tap(find.text('Submit Test'));
       await tester.pumpAndSettle();
 
-      // Проверяем, что отображается сообщение об ошибке
+      // Verify error message is displayed
       expect(find.text('Required field'), findsOneWidget);
 
-      // Bottom sheet не должен закрыться
+      // Bottom sheet should not close
       expect(find.text('Test Title'), findsOneWidget);
     });
 
@@ -197,17 +197,17 @@ void main() {
       await tester.tap(find.text('Open'));
       await tester.pumpAndSettle();
 
-      // Заполняем поле
+      // Fill the field
       await tester.enterText(find.byType(TextFormField), 'Test Value');
 
-      // Нажимаем кнопку отправки
+      // Tap submit button
       await tester.tap(find.text('Submit Test'));
-      await tester.pump(); // Только один pump, чтобы увидеть индикатор загрузки
+      await tester.pump(); // Only one pump to see the loading indicator
 
-      // Проверяем, что отображается индикатор загрузки
+      // Verify loading indicator is displayed
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
 
-      // Ждем завершения
+      // Wait for completion
       await tester.pumpAndSettle();
     });
 
@@ -239,14 +239,14 @@ void main() {
       await tester.tap(find.text('Open'));
       await tester.pumpAndSettle();
 
-      // Заполняем поле
+      // Fill the field
       await tester.enterText(find.byType(TextFormField), 'Test Value');
 
-      // Нажимаем кнопку отправки
+      // Tap submit button
       await tester.tap(find.text('Submit Test'));
       await tester.pumpAndSettle();
 
-      // Bottom sheet должен закрыться
+      // Bottom sheet should close
       expect(find.text('Test Title'), findsNothing);
     });
   });
